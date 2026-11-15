@@ -4,7 +4,7 @@ Qualquer pessoa do grupo pode sugerir histórias. Toda sugestão passa por uma *
 
 ```
 Sugestão (issue, label "sugestão")
-  └─ Triagem: revisão automática + 1 pessoa do grupo, contra os ADRs 0001–0006
+  └─ Triagem: uma pessoa do grupo, com o agente de código dela, contra os ADRs 0001–0006
        ├─ aprovada  → vira "user story" no Product Backlog, quebrada em tarefas
        ├─ adaptar   → ajustar o texto e voltar para a triagem
        └─ adiada    → fechada como "not planned", label "adiada", milestone "Revisitar após a DTI"
@@ -14,8 +14,7 @@ Sugestão (issue, label "sugestão")
 Abrir uma issue pelo modelo **Sugestão de história** (`.github/ISSUE_TEMPLATE/sugestao.yml`). As histórias com label `user story` servem de exemplo.
 
 ## 2. Triagem
-- **Automática:** o workflow `.github/workflows/triagem-sugestao.yml` comenta na issue uma tabela "ADR → atende / não atende / dúvida", uma proposta de adaptação e as tarefas já existentes que podem ser reaproveitadas. Ela só ajuda; quem decide é o grupo.
-- **Humana:** uma pessoa do grupo (não a autora) confere e aplica um dos rótulos abaixo.
+Uma pessoa do grupo (não a autora) pede ao seu agente de código (Claude Code, Codex ou Gemini CLI), dentro do repositório: *"faça a triagem da sugestão #N"*. O agente segue o roteiro do `AGENTS.md` (seção "Ao receber uma sugestão de história"): lê os ADRs, compara e comenta na issue. A pessoa confere e aplica o rótulo.
 
 | Resultado | O que fazer |
 |---|---|
@@ -39,4 +38,3 @@ Por que não uma branch separada: branches guardam código, não ideias; uma bra
 - [GitHub — fechar issue como "not planned"](https://docs.github.com/en/issues/tracking-your-work-with-issues/administering-issues/closing-an-issue)
 - [GitHub — sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues) (um pai por sub-issue) e [dependências entre issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)
 - [GitHub — milestones](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones)
-- [anthropics/claude-code-action](https://github.com/anthropics/claude-code-action) (revisão automática)
