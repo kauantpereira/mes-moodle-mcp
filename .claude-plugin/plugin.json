@@ -1,0 +1,30 @@
+{
+  "name": "moodle-mcp",
+  "displayName": "Moodle MCP",
+  "version": "0.1.0",
+  "description": "Acesso somente leitura ao Moodle do aluno, com skills de rotina (novidades, organizar a semana) e conformidade às regras da instituição",
+  "author": { "name": "Grupo G15 — MES/UFMG" },
+  "repository": "https://github.com/kauantpereira/mes-moodle-mcp",
+  "keywords": ["moodle", "mcp", "estudantes", "ufmg"],
+  "userConfig": {
+    "moodle_url": {
+      "type": "string",
+      "title": "Endereço do Moodle",
+      "description": "URL do Moodle da sua instituição (ex.: https://moodle.exemplo.edu)",
+      "required": true
+    },
+    "destino_calendario": {
+      "type": "string",
+      "title": "Onde manter prazos e mudanças",
+      "description": "Destino das skills de rotina; 'ics' gera um arquivo iCalendar, 'nenhum' só resume no chat",
+      "options": ["google", "outlook", "notion", "todoist", "obsidian", "ics", "nenhum"],
+      "default": "google"
+    },
+    "horario_rito": {
+      "type": "string",
+      "title": "Horário da rotina diária",
+      "description": "Quando a skill novidades-da-faculdade deve rodar (HH:MM)",
+      "default": "07:00"
+    }
+  }
+}

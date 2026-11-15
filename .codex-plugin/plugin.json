@@ -1,0 +1,7 @@
+{
+  "name": "moodle-mcp",
+  "version": "0.1.0",
+  "description": "Acesso somente leitura ao Moodle do aluno, com skills de rotina e conformidade às regras da instituição",
+  "skills": "./skills/",
+  "mcpServers": "./.codex-mcp.json"
+}

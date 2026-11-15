@@ -1,0 +1,10 @@
+{
+  "name": "moodle-mcp",
+  "version": "0.1.0",
+  "mcpServers": {
+    "moodle": {
+      "command": "uv",
+      "args": ["run", "--directory", "${extensionPath}", "moodle-mcp"]
+    }
+  }
+}

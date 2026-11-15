@@ -1,0 +1,14 @@
+{
+  "name": "mes-moodle-mcp",
+  "description": "Moodle MCP do grupo G15 (MES/UFMG): acesso somente leitura ao Moodle do aluno + skills de rotina",
+  "owner": {
+    "name": "Grupo G15 — MES/UFMG"
+  },
+  "plugins": [
+    {
+      "name": "moodle-mcp",
+      "source": "./",
+      "description": "Moodle MCP + skills de rotina para alunos"
+    }
+  ]
+}

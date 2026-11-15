@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "moodle": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "moodle-mcp"],
+      "env": { "MOODLE_URL": "${user_config.moodle_url}" }
+    }
+  }
+}
