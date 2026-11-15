@@ -18,3 +18,8 @@ Preferir tools que respondem a uma pergunta do aluno (ex.: `novidades_desde`) à
 ## Consequências
 - Bom: Economia de contexto de duas ordens de grandeza.
 - Ruim / a acompanhar: Mais lógica no servidor; precisa de testes.
+
+## Fontes
+- [Anthropic — Writing effective tools for AI agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
+- [Anthropic — Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp)
+- [Moodle — Web service API functions](https://docs.moodle.org/dev/Web_service_API_functions) (`core_course_get_updates_since`) e medições na demo (15/11/2026)

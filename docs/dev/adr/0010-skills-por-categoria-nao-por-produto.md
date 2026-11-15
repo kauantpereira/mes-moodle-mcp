@@ -18,3 +18,9 @@ Skills escritas para `~~calendário` e `~~tarefas`; destino escolhido na instala
 ## Consequências
 - Bom: Serve a quem usa Outlook, Notion, Todoist, Obsidian ou nada.
 - Ruim / a acompanhar: Cada destino novo precisa de teste.
+
+## Fontes
+- [anthropics/knowledge-work-plugins — CONNECTORS.md](https://github.com/anthropics/knowledge-work-plugins/blob/main/productivity/CONNECTORS.md)
+- [Claude Code — `userConfig`](https://code.claude.com/docs/en/plugins-reference)
+- RFC 5545 (iCalendar)
+- [ChatForest — MCPs de calendário](https://chatforest.com/guides/best-calendar-scheduling-mcp-servers/)

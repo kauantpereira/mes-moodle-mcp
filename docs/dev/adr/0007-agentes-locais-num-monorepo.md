@@ -19,3 +19,10 @@ Atender Claude Code/Desktop, OpenAI Codex e Gemini CLI com o MCP local (stdio), 
 ## Consequências
 - Bom: Sem custódia de credenciais; um único código.
 - Ruim / a acompanhar: Apps web ficam como trabalho futuro, só com autorização ou hospedagem institucional.
+
+## Fontes
+- [Claude — conectores remotos](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp)
+- [ChatGPT — MCP em Developer Mode](https://coworker.ai/blog/chatgpt-mcp)
+- [Gemini Apps — apps personalizados](https://support.google.com/gemini/answer/17209137?hl=en&co=GENIE.Platform%3DDesktop)
+- [cooklang/cooklang-skills](https://github.com/cooklang/cooklang-skills) (monorepo com plugin para Claude, Codex e Gemini CLI)
+- Ver também [pesquisa.md](../pesquisa.md#distribuição-local--remoto)

@@ -18,3 +18,8 @@ Contar e limitar chamadas por usuário; cache curto para dados que mudam pouco; 
 ## Consequências
 - Bom: Respeito à infraestrutura e argumento no pedido de autorização.
 - Ruim / a acompanhar: Respostas podem vir do cache por alguns minutos.
+
+## Fontes
+- [Termo de Compromisso de Uso dos Recursos de TI da UFMG](https://sistemas.ufmg.br/termos-de-uso) (versão de 20/10/2025), item 3.9
+- [Moodle — Políticas de Uso (DTI/UFMG)](https://www.ufmg.br/dti/moodle-politicas-de-uso/)
+- [MCP spec 2026-07-28 (RC): `ttlMs`/`cacheScope`](https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/)

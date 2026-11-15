@@ -11,3 +11,6 @@ decision-makers:
 ## Consequências
 - Bom:
 - Ruim / a acompanhar:
+
+## Fontes
+- 

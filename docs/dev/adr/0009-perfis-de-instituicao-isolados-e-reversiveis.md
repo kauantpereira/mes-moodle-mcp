@@ -18,3 +18,7 @@ O que é específico de uma instituição fica em `src/moodle_mcp/perfis/`, num 
 ## Consequências
 - Bom: Reverter o acesso à UFMG sem perder a demo.
 - Ruim / a acompanhar: Um nível a mais de indireção.
+
+## Fontes
+- Feedback do professor (cuidado com os termos de uso)
+- [Termo de Compromisso de Uso dos Recursos de TI da UFMG](https://sistemas.ufmg.br/termos-de-uso) (versão de 20/10/2025)

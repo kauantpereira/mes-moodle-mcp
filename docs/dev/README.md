@@ -5,7 +5,8 @@ Para quem desenvolve o projeto (pessoas e agentes). A documentação do usuário
 | Assunto | Onde |
 |---|---|
 | Regras e comandos (pessoas e agentes) | [AGENTS.md](../../AGENTS.md), [CONTRIBUTING.md](../../CONTRIBUTING.md) |
-| Decisões técnicas | [adr/](adr/) (MADR) |
+| Decisões técnicas | [adr/](adr/) (MADR, com fontes) |
+| Pesquisa (regras, boas práticas, comparação, distribuição) | [pesquisa.md](pesquisa.md) |
 | Arquitetura | [arquitetura.md](arquitetura.md) |
 | Avaliações (evals) | [../../evals/](../../evals/) |
 | Board, issues e PRs | [board.md](board.md) |

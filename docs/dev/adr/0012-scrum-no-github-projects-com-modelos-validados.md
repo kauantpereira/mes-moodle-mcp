@@ -19,3 +19,11 @@ Scrum (Scrum Guide 2020) com recursos nativos do GitHub: campo Iteration para as
 ## Consequências
 - Bom: formato conhecido pelo grupo e documentado por fontes externas.
 - Ruim / a acompanhar: views e algumas automações do GitHub Projects só se configuram pela interface.
+
+## Fontes
+- [Scrum Guide 2020](https://scrumguides.org/scrum-guide.html)
+- Connextra (2001) e INVEST (Bill Wake, 2003)
+- [Gherkin](https://cucumber.io/docs/gherkin/reference/)
+- [GitHub — sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues), [iteration fields](https://docs.github.com/en/issues/planning-and-tracking-with-projects/understanding-fields/about-iteration-fields), [automações](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations), [issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
+- [Conventional Commits](https://www.conventionalcommits.org/)
+- Board do TP de Engenharia de Software do grupo (modelo de referência)
