@@ -1,44 +1,24 @@
 # Moodle MCP
 
-Servidor MCP **somente leitura** para o Moodle do próprio aluno, distribuído como plugin com skills de rotina, para agentes locais: **Claude Code/Desktop, OpenAI Codex e Gemini CLI**.
+Deixe seu assistente de IA (Claude, Codex ou Gemini CLI) acompanhar o seu Moodle por você: avisos dos professores, prazos e mudanças de cronograma, **só leitura e só com os seus dados**.
 
-TP3 de Manutenção e Evolução de Software (DCC071, UFMG), grupo G15.
+> **Repositório privado.** Não divulgar sem autorização da instituição que hospeda o Moodle (ver [ADR-0001](docs/dev/adr/0001-pedir-autorizacao-a-instituicao-antes-de-divulgar.md)).
 
-> **Repositório privado.** Não publicar nem divulgar sem autorização da instituição que hospeda o Moodle (no caso da UFMG, a DTI; ver docs/decisoes.md, D1).
+## O que ele faz
+- **Novidades da faculdade:** todo dia, resume o que mudou (avisos, materiais, prazos) e atualiza o seu calendário.
+- **Organizar a semana:** "como organizo minha semana para entregar tudo e estudar para X e Y?"
+- **Regras de IA:** lembra de conferir se a disciplina permite IA antes de ajudar numa atividade avaliativa.
 
-## Princípios
-- **Só leitura:** só funções `get` da API de web services do Moodle; nada é enviado, publicado ou alterado.
-- **Só dados do próprio aluno:** nenhuma tool expõe participantes, posts de colegas ou notas de terceiros.
-- **Credenciais locais:** cada aluno usa o próprio token, guardado no chaveiro do sistema; o servidor roda na máquina dele (stdio) e nunca vê a senha.
-- **Respeito à infraestrutura:** contador e limite de chamadas; cache curto; evitar janelas de manutenção.
-- **Regras de IA:** instrução ao agente + aviso em atividades avaliativas.
-- **Economia de contexto:** tools orientadas à tarefa (ex.: o que mudou desde X), com filtros e cortes padrão.
-- **Perfis por instituição:** o que é específico de uma instituição fica em `src/moodle_mcp/perfis/`, isolado do núcleo.
+## Comece em 5 minutos
+1. Instale no seu agente (no Claude Code: `/plugin marketplace add kauantpereira/mes-moodle-mcp` e `/plugin install moodle-mcp@mes-moodle-mcp`): [Claude Code](docs/guias/instalar-no-claude.md) · [Codex](docs/guias/instalar-no-codex.md) · [Gemini CLI](docs/guias/instalar-no-gemini.md)
+2. Siga o [tutorial de primeiros passos](docs/tutorial/primeiros-passos.md).
 
-## Estrutura
-```
-src/moodle_mcp/            servidor MCP (núcleo + perfis/)
-skills/                    SKILL.md (padrão aberto Agent Skills), compartilhados pelas 3 plataformas
-CONNECTORS.md              categorias ~~calendário / ~~tarefas e conectores
-.mcp.json                  MCP para o Claude Code
-.claude-plugin/            manifesto + marketplace do Claude
-.codex-plugin/ + .codex-mcp.json   manifesto do Codex
-gemini-extension.json      manifesto do Gemini CLI
-tests/  evals/  docs/
-```
-
-## Instalação (membros do grupo)
-| Plataforma | Comando |
+## Documentação
+| Preciso… | Vá para |
 |---|---|
-| Claude Code | `/plugin marketplace add kauantpereira/mes-moodle-mcp` e depois `/plugin install moodle-mcp@mes-moodle-mcp` |
-| OpenAI Codex | `codex plugin marketplace add kauantpereira/mes-moodle-mcp` (a validar) |
-| Gemini CLI | `gemini extensions install https://github.com/kauantpereira/mes-moodle-mcp` (a validar) |
+| aprender a usar, do zero | [Tutorial](docs/tutorial/primeiros-passos.md) |
+| resolver uma tarefa específica | [Guias](docs/guias/) |
+| consultar tools, opções e conectores | [Referência](docs/referencia/) |
+| entender privacidade e regras | [Explicação](docs/explicacao/) · [Perguntas frequentes](docs/perguntas-frequentes.md) |
 
-## Desenvolvimento
-```bash
-uv sync
-uv run pytest
-claude plugin validate .
-```
-
-Regras de contribuição em CONTRIBUTING.md; decisões em docs/decisoes.md.
+Quer contribuir? Veja [CONTRIBUTING.md](CONTRIBUTING.md) e a [documentação de desenvolvimento](docs/dev/).
