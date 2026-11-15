@@ -1,0 +1,20 @@
+name: Tarefa
+description: Um passo implementável de uma história (sub-issue)
+labels: ["task"]
+body:
+  - type: input
+    id: historia
+    attributes:
+      label: Parte de
+      placeholder: "#12"
+    validations: { required: true }
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que fazer
+    validations: { required: true }
+  - type: textarea
+    id: pronto
+    attributes:
+      label: Pronto quando
+      value: "- [ ] Testes passam (`uv run pytest`)\n- [ ] `claude plugin validate .` passa\n- [ ] Docs do usuário ou ADR atualizados, se for o caso"

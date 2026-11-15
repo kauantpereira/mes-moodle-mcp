@@ -19,6 +19,6 @@ Deixe seu assistente de IA (Claude, Codex ou Gemini CLI) acompanhar o seu Moodle
 | aprender a usar, do zero | [Tutorial](docs/tutorial/primeiros-passos.md) |
 | resolver uma tarefa específica | [Guias](docs/guias/) |
 | consultar tools, opções e conectores | [Referência](docs/referencia/) |
-| entender privacidade e regras | [Explicação](docs/explicacao/) · [Perguntas frequentes](docs/perguntas-frequentes.md) |
+| entender privacidade e regras | [Explicação](docs/explicacao/) |
 
 Quer contribuir? Veja [CONTRIBUTING.md](CONTRIBUTING.md) e a [documentação de desenvolvimento](docs/dev/).

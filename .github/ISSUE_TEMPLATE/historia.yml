@@ -1,0 +1,34 @@
+name: História de usuário
+description: Uma necessidade do aluno, quebrada depois em tarefas (sub-issues)
+title: "Como aluno, quero … para …"
+labels: ["user story"]
+body:
+  - type: textarea
+    id: historia
+    attributes:
+      label: História
+      description: "Como <quem>, quero <o quê>, para <por quê>."
+    validations: { required: true }
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critérios de aceite
+      value: "- [ ] \n- [ ] "
+    validations: { required: true }
+  - type: checkboxes
+    id: conformidade
+    attributes:
+      label: Conformidade (ver AGENTS.md e docs/dev/adr/)
+      options:
+        - label: Só leitura e só dados do próprio aluno (ADR-0004)
+        - label: Respostas com filtro/corte padrão e tamanho medido (ADR-0008)
+        - label: Texto do Moodle marcado como dado não confiável
+        - label: Nada específico de instituição fora de perfis/ (ADR-0009)
+  - type: input
+    id: adrs
+    attributes:
+      label: ADRs relacionados
+      placeholder: "ADR-0006, ADR-0008"
+  - type: markdown
+    attributes:
+      value: "Depois de criar, adicione as tarefas como **sub-issues** desta história."

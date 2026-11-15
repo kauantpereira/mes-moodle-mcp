@@ -10,5 +10,6 @@
 7. **Skills por categoria** (`~~calendário`, `~~tarefas`), nunca por produto. Partir de skills oficiais ou open source confiáveis quando houver.
 
 ## Fluxo
+Board, labels e formato das issues: [docs/dev/board.md](docs/dev/board.md).
 - Uma história = uma issue = um PR.
 - `uv run pytest` e `claude plugin validate .` passam antes do merge.
