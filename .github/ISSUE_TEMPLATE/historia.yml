@@ -13,7 +13,8 @@ body:
     id: aceite
     attributes:
       label: Critérios de aceite
-      value: "- [ ] \n- [ ] "
+      description: "Formato Gherkin (Dado / Quando / Então), um cenário por critério."
+      value: "Cenário: \n  Dado \n  Quando \n  Então "
     validations: { required: true }
   - type: checkboxes
     id: conformidade
@@ -24,6 +25,14 @@ body:
         - label: Respostas com filtro/corte padrão e tamanho medido (ADR-0008)
         - label: Texto do Moodle marcado como dado não confiável
         - label: Nada específico de instituição fora de perfis/ (ADR-0009)
+  - type: checkboxes
+    id: invest
+    attributes:
+      label: INVEST (a história está pronta para a sprint?)
+      options:
+        - label: Independente, Negociável, Valiosa para o aluno
+        - label: Estimável e Pequena (cabe numa sprint; senão, quebrar)
+        - label: Testável (critérios de aceite verificáveis)
   - type: input
     id: adrs
     attributes:

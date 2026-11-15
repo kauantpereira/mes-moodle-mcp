@@ -10,6 +10,13 @@
 7. **Skills por categoria** (`~~calendário`, `~~tarefas`), nunca por produto. Partir de skills oficiais ou open source confiáveis quando houver.
 
 ## Fluxo
-Board, labels e formato das issues: [docs/dev/board.md](docs/dev/board.md).
-- Uma história = uma issue = um PR.
+- Processo: Scrum no GitHub Projects ([docs/dev/board.md](docs/dev/board.md)). Uma tarefa = uma branch = um PR, com título em Conventional Commits.
 - `uv run pytest` e `claude plugin validate .` passam antes do merge.
+
+## Definição de Pronto
+Um item só vai para **Done** quando:
+- os critérios de aceite (Gherkin) passam;
+- `uv run pytest` e `claude plugin validate .` passam;
+- as regras do projeto (acima) foram respeitadas;
+- o PR foi revisado por outra pessoa do grupo;
+- a documentação do usuário ou um ADR foi atualizado, se for o caso.
