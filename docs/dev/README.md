@@ -9,7 +9,8 @@ Para quem desenvolve o projeto (pessoas e agentes). A documentação do usuário
 | Pesquisa (regras, boas práticas, comparação, distribuição) | [pesquisa.md](pesquisa.md) |
 | Arquitetura | [arquitetura.md](arquitetura.md) |
 | Avaliações (evals) | [../../evals/](../../evals/) |
-| Board, issues e PRs | [board.md](board.md) |
+| Processo (Scrum), board e issues | [board.md](board.md) |
+| Branches, commits, PRs e versões | [fluxo-git.md](fluxo-git.md) |
 
 ## Como registrar contexto
 - **Decisão que afeta a arquitetura, a conformidade ou o usuário → ADR** (`adr/template.md`), em PR junto com o código.

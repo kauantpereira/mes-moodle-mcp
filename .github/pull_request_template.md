@@ -1,4 +1,4 @@
-<!-- Título no formato: feat: , fix: , docs: , refactor: , chore: , test: -->
+<!-- Título em Conventional Commits: feat(escopo): descrição — vira a mensagem do squash. Ver docs/dev/fluxo-git.md -->
 
 ## Descrição
 

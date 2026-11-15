@@ -10,7 +10,7 @@
 7. **Skills por categoria** (`~~calendário`, `~~tarefas`), nunca por produto. Partir de skills oficiais ou open source confiáveis quando houver.
 
 ## Fluxo
-- Processo: Scrum no GitHub Projects ([docs/dev/board.md](docs/dev/board.md)). Uma tarefa = uma branch = um PR, com título em Conventional Commits.
+- Processo: Scrum no GitHub Projects ([docs/dev/board.md](docs/dev/board.md)). Uma tarefa = uma branch = um PR. Branches, commits, PRs e versões: [docs/dev/fluxo-git.md](docs/dev/fluxo-git.md).
 - `uv run pytest` e `claude plugin validate .` passam antes do merge.
 
 ## Definição de Pronto

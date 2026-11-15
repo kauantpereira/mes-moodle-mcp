@@ -26,6 +26,11 @@ Servidor MCP **somente leitura** para o Moodle do aluno + skills de rotina, dist
 - Documentação do usuário: `docs/` (Diátaxis). Não misturar conteúdo de dev ali.
 - Conectores: `CONNECTORS.md`.
 
+## Commits e PRs
+- Branch `<tipo>/<issue>-<resumo>`; commits e título do PR em Conventional Commits (`feat(tools): adiciona novidades_desde`), em português, no imperativo.
+- Rodapé `Co-Authored-By:` do agente em todo commit feito com ajuda de IA.
+- PR pelo template, com `Fecha #N`; squash and merge. Detalhes: `docs/dev/fluxo-git.md`.
+
 ## Ao terminar uma mudança
 - Testes e `claude plugin validate .` passam.
 - Mudou uma decisão? Novo ADR. Mudou o comportamento para o usuário? Atualizar `docs/referencia/` ou o guia correspondente.
