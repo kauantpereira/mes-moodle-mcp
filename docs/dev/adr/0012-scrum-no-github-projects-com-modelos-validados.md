@@ -18,7 +18,8 @@ Scrum (Scrum Guide 2020) com recursos nativos do GitHub: campo Iteration para as
 
 ## Consequências
 - Bom: formato conhecido pelo grupo e documentado por fontes externas.
-- Ruim / a acompanhar: views e algumas automações do GitHub Projects só se configuram pela interface.
+- Views padrão criadas por API (Histórias, Sprint atual, Tabela por responsável).
+- Ruim / a acompanhar: as automações nativas do GitHub Projects só se ligam pela interface (sem API); ver `pesquisa.md`.
 
 ## Fontes
 - [Scrum Guide 2020](https://scrumguides.org/scrum-guide.html)

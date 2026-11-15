@@ -59,3 +59,18 @@ Oficiais: Google Agenda (conector; servidor próprio do Google em preview), Noti
 - **Tecnologias:** code execution (alta para análise), cache com TTL (média), elicitation por URL para o login (média); tool search, resources com assinatura, Tasks e MCP Apps (baixa).
 - **NotebookLM:** não se conecta a MCP; sem API pública para contas pessoais (só Enterprise); MCPs comunitários automatizam o navegador ([PleasePrompto/notebooklm-mcp](https://github.com/PleasePrompto/notebooklm-mcp), [jacob-bd/notebooklm-mcp-cli](https://github.com/jacob-bd/notebooklm-mcp-cli)). Todos os caminhos copiam o material dos professores para fora do Moodle (contra o ADR-0003); só com autorização. Fonte: [MCP.Directory](https://mcp.directory/blog/notebooklm-mcp-complete-guide-2026).
 - **Apps web:** só com MCP remoto, que exigiria custodiar tokens (ADR-0007); possível se hospedado pela própria instituição.
+
+## GitHub Projects: o que dá para automatizar (15/11/2026)
+| O quê | Por API? | Como |
+|---|---|---|
+| Criar projeto, ligar ao repo | sim | `gh project create`, `gh project link` |
+| Campos, opções de Status, iterações (sprints) | sim | GraphQL (`updateProjectV2Field`, `createProjectV2Field`) |
+| **Views** (board, tabela, roadmap, com filtro e campos visíveis) | **sim**, desde set/2025 | REST `POST /users/<login>/projectsV2/<n>/views`; testado neste board |
+| Automações nativas (item fechado → Done etc.) | **não** | só ler e apagar (`deleteProjectV2Workflow`); ligar é pela interface |
+| Copiar um board inteiro | sim | `gh project copy` / `copyProjectV2`: campos, views e automações (menos auto-add); não copia itens nem vínculos |
+| Auto-add de issues do repo | não (nativo) | alternativa oficial: action [`actions/add-to-project`](https://github.com/actions/add-to-project) |
+| Merge só por squash, apagar branch | sim | `gh api -X PATCH repos/<dono>/<repo>` (aplicado aqui) |
+
+MCPs de terceiros para Projects (ex.: [jersonmartinez/mcp-github-projects](https://github.com/jersonmartinez/mcp-github-projects)) usam a mesma API e têm o mesmo limite nas automações nativas.
+
+Fontes: [changelog da API REST de Projects](https://github.blog/changelog/2025-09-11-a-rest-api-for-github-projects-sub-issues-improvements-and-more/), [REST — views](https://docs.github.com/en/enterprise-server@3.22/rest/projects/views), [GraphQL — Projects](https://docs.github.com/en/graphql/reference/projects), [discussão #153532](https://github.com/orgs/community/discussions/153532), [Gitsu — templates de board](https://gitsu.app/guides/github-project-board-templates).
