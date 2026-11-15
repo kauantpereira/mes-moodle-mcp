@@ -8,6 +8,7 @@ Para quem desenvolve o projeto (pessoas e agentes). A documentação do usuário
 | Decisões técnicas | [adr/](adr/) (MADR) |
 | Arquitetura | [arquitetura.md](arquitetura.md) |
 | Avaliações (evals) | [../../evals/](../../evals/) |
+| Board, issues e PRs | [board.md](board.md) |
 
 ## Como registrar contexto
 - **Decisão que afeta a arquitetura, a conformidade ou o usuário → ADR** (`adr/template.md`), em PR junto com o código.
