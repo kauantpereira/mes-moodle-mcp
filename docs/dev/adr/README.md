@@ -18,5 +18,6 @@ Formato: [MADR](https://adr.github.io/madr/) mínimo. Uma decisão por arquivo, 
 | [0012](0012-scrum-no-github-projects-com-modelos-validados.md) | Scrum no GitHub Projects com modelos validados | aceita |
 | [0013](0013-skills-servidas-num-plugin-no-padrao-agent-skills.md) | Skills servidas num plugin, no padrão Agent Skills | aceita |
 | [0014](0014-github-flow-conventional-commits-e-semver.md) | GitHub Flow, Conventional Commits e SemVer | aceita |
+| [0015](0015-fluxo-de-sugestoes-com-triagem-de-conformidade.md) | Fluxo de sugestões com triagem de conformidade | aceita |
 
 Modelo para novas decisões: [template.md](template.md). Pesquisa que embasou as decisões: [../pesquisa.md](../pesquisa.md).

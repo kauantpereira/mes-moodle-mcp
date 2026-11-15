@@ -1,0 +1,34 @@
+# Revisão automática de conformidade das sugestões de história (ADR-0015).
+# Precisa do segredo ANTHROPIC_API_KEY no repositório; sem ele, o job é pulado.
+name: Triagem de sugestão
+on:
+  issues:
+    types: [opened, labeled, edited]
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+jobs:
+  triagem:
+    if: contains(github.event.issue.labels.*.name, 'sugestão')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar segredo
+        id: chave
+        env: { K: "${{ secrets.ANTHROPIC_API_KEY }}" }
+        run: if [ -n "$K" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.chave.outputs.ok == '1'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A issue #${{ github.event.issue.number }} é uma sugestão de história de usuário.
+            Leia AGENTS.md, docs/dev/sugestoes.md e os ADRs em docs/dev/adr/ (principalmente 0001 a 0006).
+            Comente na issue, em português e de forma curta:
+            1. uma tabela ADR → atende / não atende / dúvida, com uma linha de motivo;
+            2. se algo não atende, uma versão adaptada da história que atenda;
+            3. tarefas já existentes (issues com label "task") que podem ser reaproveitadas como dependência;
+            4. uma recomendação: aprovada, adaptar ou adiada (citando o ADR).
+            Não mude labels nem feche a issue: a decisão é do grupo.
+          claude_args: --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh issue comment:*)"

@@ -4,6 +4,7 @@ Como interagir com o repositório: branches, commits, PRs, revisão e versões. 
 
 ## Branches: GitHub Flow
 - `main` está sempre funcionando (testes e validação do plugin passam).
+- **Não há branch `dev`** nem `develop`: no GitHub Flow, `main` é a única branch de longa duração (ADR-0014). Ideias adiadas não viram branch: ver `sugestoes.md`.
 - Toda mudança nasce numa branch a partir de `main`, com prefixo do tipo e o número da issue:
   `feat/12-novidades-desde`, `fix/30-token-expirado`, `docs/15-guia-gemini`.
 - Uma tarefa (issue `task`) = uma branch = um PR.

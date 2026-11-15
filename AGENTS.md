@@ -26,6 +26,12 @@ Servidor MCP **somente leitura** para o Moodle do aluno + skills de rotina, dist
 - Documentação do usuário: `docs/` (Diátaxis). Não misturar conteúdo de dev ali.
 - Conectores: `CONNECTORS.md`.
 
+## Antes de agir
+Leia o documento do assunto em `docs/dev/` antes de criar branch, issue ou PR:
+- branch, commit, PR, versão → `docs/dev/fluxo-git.md` (GitHub Flow: não há branch `dev`; tudo sai de `main`);
+- issue, história, tarefa, board → `docs/dev/board.md`;
+- sugestão de história e triagem → `docs/dev/sugestoes.md`.
+
 ## Commits e PRs
 - Branch `<tipo>/<issue>-<resumo>`; commits e título do PR em Conventional Commits (`feat(tools): adiciona novidades_desde`), em português, no imperativo.
 - Rodapé `Co-Authored-By:` do agente em todo commit feito com ajuda de IA.
