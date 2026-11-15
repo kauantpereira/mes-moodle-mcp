@@ -30,18 +30,10 @@ Servidor MCP **somente leitura** para o Moodle do aluno + skills de rotina, dist
 Leia o documento do assunto em `docs/dev/` antes de criar branch, issue ou PR:
 - branch, commit, PR, versão → `docs/dev/fluxo-git.md` (GitHub Flow: não há branch `dev`; tudo sai de `main`);
 - issue, história, tarefa, board → `docs/dev/board.md`;
-- sugestão de história e triagem → `docs/dev/sugestoes.md`.
+- coleta e processamento de sugestões → `docs/dev/sugestoes.md`.
 
-## Ao receber uma sugestão de história
-Quando pedirem para triar uma sugestão (issue com label `sugestão`):
-1. Ler a issue (`gh issue view N`), `docs/dev/sugestoes.md` e os ADRs 0001–0006 (conformidade), além dos que a sugestão tocar.
-2. Comentar na issue, em português e curto:
-   - tabela ADR → atende / não atende / dúvida, com uma linha de motivo;
-   - se algo não atende, uma versão adaptada da história que atenda;
-   - tarefas existentes (`gh issue list --label task`) que podem ser reaproveitadas como dependência;
-   - recomendação: `aprovada`, `adaptar` ou `adiada` (citando o ADR).
-3. **Não** mudar labels, fechar a issue nem criar tarefas sem a pessoa confirmar: a decisão é do grupo.
-4. Se a pessoa aprovar: trocar `sugestão` por `user story`, completar critérios Gherkin e pontos, criar as tarefas novas como sub-issues e marcar as reaproveitadas como dependência. Se adiar: fechar como "not planned", citar o ADR e pôr no milestone "Revisitar após a DTI".
+## Ao processar a coleta de histórias
+Só quando a pessoa pedir. Ler a issue "Coleta de histórias", `docs/dev/sugestoes.md` e os ADRs 0001–0006. Para cada sugestão ainda sem resposta, propor: aprovada / adaptar (com a versão que atende) / adiada (com o ADR que impede), e as tarefas existentes que podem ser reaproveitadas. **Nada é criado, rotulado ou fechado sem a pessoa confirmar.**
 
 ## Commits e PRs
 - Branch `<tipo>/<issue>-<resumo>`; commits e título do PR em Conventional Commits (`feat(tools): adiciona novidades_desde`), em português, no imperativo.

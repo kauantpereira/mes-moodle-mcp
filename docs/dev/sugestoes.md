@@ -1,40 +1,31 @@
-# Sugestões de histórias: da ideia ao board
+# Coleta de histórias
 
-Qualquer pessoa do grupo pode sugerir histórias. Toda sugestão passa por uma **triagem de conformidade** contra os ADRs antes de ir para o board. Decisão: [ADR-0015](adr/0015-fluxo-de-sugestoes-com-triagem-de-conformidade.md).
+Estrutura e estratégia para o grupo sugerir histórias. Nada é automático. Decisão: [ADR-0015](adr/0015-fluxo-de-sugestoes-com-triagem-de-conformidade.md).
 
-```
-Sugestão (issue, label "sugestão")
-  └─ Triagem: uma pessoa do grupo, com o agente de código dela, contra os ADRs 0001–0006
-       ├─ aprovada  → vira "user story" no Product Backlog, quebrada em tarefas
-       ├─ adaptar   → ajustar o texto e voltar para a triagem
-       └─ adiada    → fechada como "not planned", label "adiada", milestone "Revisitar após a DTI"
-```
+## Estrutura
+- **Uma issue fixada, "Coleta de histórias"** (label `task`, no board). Todo mundo sugere **comentando nela**, um comentário por ideia, no formato:
+  ```
+  Como aluno, quero … para …
+  Exemplo: na segunda de manhã eu pergunto … e o agente …
+  Dados do Moodle que usaria: …
+  ```
+- As histórias-exemplo (label `user story`) mostram o formato completo.
 
-## 1. Sugerir
-Abrir uma issue pelo modelo **Sugestão de história** (`.github/ISSUE_TEMPLATE/sugestao.yml`). As histórias com label `user story` servem de exemplo.
+## Estratégia
+- As sugestões se acumulam na coleta e são **processadas em lote**, de tempos em tempos (a rotina — quando e quem — será combinada depois).
+- No processamento, cada sugestão é comparada aos ADRs de conformidade (0001–0006) e recebe uma resposta no próprio comentário:
 
-## 2. Triagem
-Uma pessoa do grupo (não a autora) pede ao seu agente de código (Claude Code, Codex ou Gemini CLI), dentro do repositório: *"faça a triagem da sugestão #N"*. O agente segue o roteiro do `AGENTS.md` (seção "Ao receber uma sugestão de história"): lê os ADRs, compara e comenta na issue. A pessoa confere e aplica o rótulo.
-
-| Resultado | O que fazer |
+| Resultado | O que acontece |
 |---|---|
-| `aprovada` | Trocar `sugestão` por `user story`, completar critérios Gherkin e pontos, mover para Product Backlog, criar as tarefas. |
-| `adaptar` | Comentar o que muda para atender aos ADRs; a autora edita e pede nova triagem. |
-| `adiada` | Fechar como **not planned**, citar no comentário o ADR que impede e pôr no milestone **Revisitar após a DTI**. |
+| **aprovada** | vira issue `user story` no Product Backlog, quebrada em tarefas; tarefas que já existem são reaproveitadas como dependência ("bloqueada por #N"), sem duplicar |
+| **adaptar** | a resposta propõe uma versão que atende aos ADRs; a autora ajusta no próprio comentário |
+| **adiada** | vira issue fechada como "not planned", label `adiada`, citando o ADR, no milestone **Revisitar após a DTI** |
 
-## 3. Reaproveitar tarefas
-No GitHub, uma tarefa (sub-issue) tem **um só pai**. Se a história nova precisa de uma tarefa que já existe em outra história:
-- **não duplicar**: marcar a história nova como **bloqueada por** a tarefa existente (dependência nativa do GitHub);
-- citar a tarefa na descrição ("Reaproveita #N").
-Só criar tarefa nova para o que for exclusivo da história.
-
-## 4. Sugestões adiadas
-Ficam fechadas, mas pesquisáveis (`is:closed label:adiada`), cada uma ligada ao ADR que a impediu. Se a DTI autorizar e um ADR for substituído por outro mais brando, reabrir as adiadas daquele ADR e refazer a triagem.
-
-Por que não uma branch separada: branches guardam código, não ideias; uma branch que nunca é mesclada fica desatualizada e não aparece no board. Issue fechada como "not planned" com label e milestone é o mecanismo nativo do GitHub para isso.
+- Por que as adiadas viram issue fechada: ficam pesquisáveis (`is:closed label:adiada`) e ligadas ao ADR que as impediu. Se a DTI autorizar e um ADR ficar mais brando, reabrem-se as daquele ADR.
+- Uma tarefa (sub-issue) tem **um só pai** no GitHub; por isso o reaproveitamento é por dependência.
 
 ## Fontes
-- [GitHub — issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
+- [GitHub — fixar issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/administering-issues/pinning-an-issue-to-your-repository)
 - [GitHub — fechar issue como "not planned"](https://docs.github.com/en/issues/tracking-your-work-with-issues/administering-issues/closing-an-issue)
-- [GitHub — sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues) (um pai por sub-issue) e [dependências entre issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)
+- [GitHub — sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues) e [dependências entre issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)
 - [GitHub — milestones](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones)
