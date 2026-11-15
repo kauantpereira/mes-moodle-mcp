@@ -19,6 +19,8 @@ https://github.com/users/kauantpereira/projects/1 (privado)
 - **Status:** Product Backlog → Sprint Backlog → In Progress → In Review → Done
 - **Points:** 1, 2, 3, 5, 8 (nas histórias)
 - **Sprint:** Sprint 1 (16–20/11), Sprint 2 (21–25/11; apresentação em 25/11)
+- **Views:** Histórias (`label:"user story"`), Sprint atual (`sprint:@current`), Tabela por responsável — criadas pela [API REST de Projects](https://docs.github.com/en/enterprise-server@3.22/rest/projects/views).
+- **Automações nativas:** só pela interface (a API não permite ligá-las): item fechado → Done, PR mesclado → Done, PR vinculado → In Review, auto-add do repo.
 
 ## Issues
 - **História** (`user story`): Connextra + critérios Gherkin + checklist INVEST + checklist de conformidade. Modelo: `.github/ISSUE_TEMPLATE/historia.yml`.
