@@ -18,3 +18,19 @@ Toda tool que devolve texto escrito por pessoas (avisos, enunciados, descriçõe
 - Metadados (ids, datas, números, tipos) ficam fora de `nao_confiavel`; texto livre fica dentro.
 - O texto é limpo: sem HTML, comentários, scripts, estilos e caracteres invisíveis (largura zero, controle bidirecional, tags Unicode), que o aluno não vê na página mas o modelo leria.
 - `cortado` lista os campos encurtados pelo corte padrão (600 caracteres).
+
+## `prazos_da_semana`
+
+Lista prazos oficiais de atividades `assign` dos próximos sete dias. Não considera prazos combinados em PDFs, avisos, mensagens ou fora do campo oficial de prazo no Moodle. A saída tem no máximo 8 atividades, ordenadas pelo prazo, com textos de atividade, disciplina e arquivo limpos e limitados a 120 caracteres; o corte busca manter respostas abaixo de aproximadamente 2 mil tokens.
+
+Parâmetros:
+
+- `nome_tarefa` (opcional): trecho do nome para consultar uma atividade específica. Essa consulta não aplica janela temporal nem remove atividades enviadas. Se houver mais de uma correspondência, retorna a lista para desambiguação sem consultar status.
+- `limite` (opcional, padrão 10): máximo de resultados da listagem semanal, limitado a 8.
+- `fuso_horario` (opcional, padrão `UTC`): fuso IANA usado para exibir datas, por exemplo `America/Sao_Paulo`.
+
+Sem `nome_tarefa`, consulta `mod_assign_get_assignments` sem `courseids` (o Moodle usa as atividades disponíveis ao usuário autenticado) e consulta `mod_assign_get_submission_status` somente para atividades candidatas com submissão pelo Moodle. Atividades `submitted` são omitidas; `draft` permanece como rascunho não enviado; `reopened` permanece visível como tentativa reaberta; `new` ou `lastattempt` válido sem submissão individual ou de equipe é informado como sem submissão. Respostas sem `lastattempt`, com estruturas de submissão incompatíveis ou com status desconhecido são marcadas como `nao_verificado`. Atividades `nosubmissions` permanecem na lista como sem mecanismo de entrega pelo Moodle e não são chamadas para status. A extensão individual (`extensionduedate`) substitui o prazo-base quando a API a retorna. A janela considera prazos-base desde sete dias antes do momento atual para detectar extensões recentes, mas só apresenta datas efetivas entre agora e os próximos sete dias.
+
+Com `nome_tarefa`, consulta o estado mesmo fora da janela e mantém tarefas enviadas. Informa até três nomes de arquivos quando os plugins de submissão os disponibilizam, sem baixar arquivos ou expor conteúdo. `timemodified` é a última modificação registrada pelo Moodle: em um rascunho, é a última edição do rascunho; em uma submissão enviada, é a última modificação registrada, não uma garantia de que aquele seja o instante original do primeiro envio. Status indisponível aparece como `nao_verificado`; não se infere que a atividade esteja pendente ou enviada. Em tarefas de grupo, a resposta contém apenas estado, horário e nomes de arquivos retornados para a submissão, sem identificadores ou dados de integrantes.
+
+A resposta contém `aviso` para os textos externos, `aviso_prazos` para a limitação dos prazos externos e `dados`. Textos de nomes e arquivos ficam em `nao_confiavel`; status e timestamps são metadados.
