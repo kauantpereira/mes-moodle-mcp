@@ -69,6 +69,14 @@ def test_falha_de_rede_sem_token(monkeypatch):
         raise httpx.ConnectError("sem rede")
 
     com_resposta(monkeypatch, falha)
-    with pytest.raises(ToolError, match="ConnectError") as exc:
+    with pytest.raises(ToolError, match="Falha de conexão com o Moodle") as exc:
         asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
     assert TOKEN not in str(exc.value)
+    assert "sem rede" not in str(exc.value)
+
+
+def test_erro_rest_nao_expoe_mensagem_bruta(monkeypatch):
+    com_resposta(monkeypatch, lambda r: httpx.Response(200, json={"errorcode": "invalidtoken", "message": "token super secreto"}))
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
+    assert "token super secreto" not in str(exc.value)

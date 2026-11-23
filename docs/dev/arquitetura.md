@@ -10,7 +10,7 @@ agente (Claude Code / Codex / Gemini CLI)
 ```
 
 ## Núcleo
-- `client.py`: cliente da API REST. Recebe só URL + token. Só chama funções de `FUNCOES_PERMITIDAS` (regra 1): **toda função nova entra nessa lista no mesmo PR da tool que a usa**. Token só no corpo do POST, nunca em mensagens de erro; HTTPS obrigatório (HTTP só em `localhost`, para o Moodle local); downloads só do host do Moodle.
-- `nucleo.py`: o que as tools usam. `cliente()` lê `MOODLE_URL` e o token (por enquanto `MOODLE_TOKEN`; o login troca `obter_token`), e `chamar()` traduz erros do Moodle para mensagens ao agente.
+- `client.py`: cliente da API REST. Recebe só URL + token. Só chama funções explicitamente listadas em `FUNCOES_PERMITIDAS`; funções fora da lista são barradas antes da rede. O token vai no corpo do POST. Downloads usam GET separado, limitado ao host do Moodle, com token apenas na requisição. Mensagens brutas, corpos inválidos e detalhes de transporte são descartados.
+- `nucleo.py`: ponto usado pelas tools. `cliente()` reutiliza um cliente por processo. `MOODLE_TOKEN` é um provedor provisório para desenvolvimento e será substituído pelo login e chaveiro previstos no ADR-0002. `chamar()` expõe mensagens genéricas sem conteúdo bruto do Moodle, URL ou detalhes de exceção. O transporte HTTP é encerrado por `aclose()` no cliente.
 
 Decisões: ver [adr/](adr/).

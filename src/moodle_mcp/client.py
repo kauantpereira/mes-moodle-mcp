@@ -29,8 +29,6 @@ FUNCOES_PERMITIDAS = frozenset(
         "mod_assign_get_assignments",
         "mod_assign_get_submission_status",
         "gradereport_user_get_grade_items",
-        "mod_forum_get_forums_by_courses",
-        "mod_forum_get_forum_discussions",
     }
 )
 
@@ -64,14 +62,17 @@ def _achatar(params: dict[str, Any], prefixo: str = "") -> dict[str, str]:
 
 
 def _checar_erro(dados: Any) -> None:
-    # Só repassamos errorcode e message; debuginfo/stacktrace ficam de fora.
+    # Mensagens do servidor também são externas e podem conter dados sensíveis.
     if isinstance(dados, dict) and ("exception" in dados or "errorcode" in dados):
-        raise MoodleError(dados.get("errorcode", "erro"), dados.get("message") or dados.get("error", "Erro do Moodle"))
+        codigo = dados.get("errorcode")
+        if not isinstance(codigo, str) or not codigo.isascii() or not codigo.replace("_", "").isalnum():
+            codigo = "erro"
+        raise MoodleError(codigo, "resposta de erro do Moodle")
 
 
 def _url_segura(url: str) -> bool:
     partes = urlsplit(url)
-    return partes.scheme == "https" or (partes.scheme == "http" and partes.hostname in HOSTS_LOCAIS)
+    return (partes.scheme == "https" or (partes.scheme == "http" and partes.hostname in HOSTS_LOCAIS)) and not (partes.username or partes.password or partes.query or partes.fragment)
 
 
 class MoodleClient:
@@ -117,27 +118,28 @@ class MoodleClient:
         """
         base = urlsplit(self.base_url)
         url = fileurl
-        for _ in range(4):
-            partes = urlsplit(url)
-            if partes.scheme != base.scheme or partes.netloc != base.netloc:
-                raise ValueError("o arquivo está fora do host do Moodle")
-            async with self._http.stream("GET", url, params={"token": self._token}, follow_redirects=False) as resp:
-                if resp.is_redirect:
-                    url = str(resp.url.join(resp.headers.get("location", "")))
-                    # Tira o token antes de seguir, para ele não ir parar em mensagens de erro.
-                    url = url.split("?token=")[0].split("&token=")[0]
-                    continue
-                if resp.is_error:
-                    # Sem a URL na mensagem: ela leva o token na query string.
-                    raise ValueError(f"o Moodle recusou o download (HTTP {resp.status_code})")
-                if int(resp.headers.get("content-length") or 0) > limite_bytes:
-                    raise ValueError("arquivo grande demais")
-                dados = bytearray()
-                async for pedaco in resp.aiter_bytes():
-                    dados += pedaco
-                    if len(dados) > limite_bytes:
+        try:
+            for _ in range(4):
+                partes = urlsplit(url)
+                if partes.scheme != base.scheme or partes.netloc != base.netloc or partes.username or partes.password:
+                    raise ValueError("o arquivo está fora do host do Moodle")
+                async with self._http.stream("GET", url, params={"token": self._token}, follow_redirects=False) as resp:
+                    if resp.is_redirect:
+                        url = str(resp.url.join(resp.headers.get("location", "")))
+                        url = url.split("?token=")[0].split("&token=")[0]
+                        continue
+                    if resp.is_error:
+                        raise ValueError("o Moodle recusou o download")
+                    if int(resp.headers.get("content-length") or 0) > limite_bytes:
                         raise ValueError("arquivo grande demais")
-                return bytes(dados)
+                    dados = bytearray()
+                    async for pedaco in resp.aiter_bytes():
+                        dados += pedaco
+                        if len(dados) > limite_bytes:
+                            raise ValueError("arquivo grande demais")
+                    return bytes(dados)
+        except httpx.HTTPError as exc:
+            raise ValueError("falha de transporte ao baixar arquivo") from None
         raise ValueError("redirecionamentos demais")
 
     async def aclose(self) -> None:
