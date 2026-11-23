@@ -71,6 +71,7 @@ def test_funcao_fora_da_lista_e_barrada_antes_da_requisicao():
 
 def test_lista_de_funcoes_so_tem_leitura():
     assert all("_get_" in f for f in FUNCOES_PERMITIDAS)
+    assert not any(f.startswith("mod_forum_") for f in FUNCOES_PERMITIDAS)
 
 
 def test_site_info_fica_em_cache():
@@ -82,6 +83,12 @@ def test_site_info_fica_em_cache():
 
 @pytest.mark.parametrize("base", ["http://moodle.exemplo.edu", "ftp://moodle.exemplo.edu"])
 def test_recusa_moodle_sem_https(base):
+    with pytest.raises(ValueError):
+        MoodleClient(base, TOKEN)
+
+
+@pytest.mark.parametrize("base", [f"https://{TOKEN}@moodle.exemplo.edu", "https://moodle.exemplo.edu/?token=segredo"])
+def test_recusa_url_com_credenciais_ou_query(base):
     with pytest.raises(ValueError):
         MoodleClient(base, TOKEN)
 
@@ -128,5 +135,29 @@ def test_baixar_erro_http_sem_url_nem_token():
     c, _ = cliente(lambda req: httpx.Response(403))
     with pytest.raises(ValueError) as exc:
         rodar(c.baixar(f"{BASE}/webservice/pluginfile.php/1/a.pdf", 100))
-    assert "403" in str(exc.value)
+    assert "403" not in str(exc.value)
     assert TOKEN not in str(exc.value) and BASE not in str(exc.value)
+
+
+def test_resposta_invalida_nao_vaza_corpo():
+    c, _ = cliente(lambda req: httpx.Response(200, content=b"segredo privado"))
+    with pytest.raises(ValueError) as exc:
+        rodar(c.call("core_webservice_get_site_info"))
+    assert "segredo privado" not in str(exc.value)
+
+
+def test_erro_do_moodle_nao_vaza_mensagem():
+    c, _ = cliente(lambda req: httpx.Response(200, json={"errorcode": "invalidtoken", "message": "senha e token secreto"}))
+    with pytest.raises(MoodleError) as exc:
+        rodar(c.call("core_webservice_get_site_info"))
+    assert "senha e token secreto" not in str(exc.value)
+
+
+def test_falha_transporte_download_sem_detalhes():
+    def falhar(req):
+        raise httpx.ConnectError("https://usuario:senha@moodle.exemplo.edu?token=segredo")
+    c, _ = cliente(falhar)
+    with pytest.raises(ValueError) as exc:
+        rodar(c.baixar(f"{BASE}/arquivo?token=antigo", 100))
+    assert str(exc.value) == "falha de transporte ao baixar arquivo"
+    assert "senha" not in str(exc.value) and "segredo" not in repr(exc.value.__cause__)
