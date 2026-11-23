@@ -33,6 +33,10 @@ https://github.com/users/kauantpereira/projects/1 (privado)
 | `task` | tarefa |
 | `perfil-ufmg` | código específico da UFMG; PR isolado e reversível (ADR-0009) |
 | `condicional` | só executar se a DTI negar (ADR-0001) |
+| `adiada` | sugestão que não atende a um ADR hoje; issue fechada como "not planned" no milestone "Revisitar após a DTI" (ADR-0015) |
+| `prevista-no-build` | entra no build da apresentação (25/11) |
+| `nao-prevista` | fica fora do build da apresentação; Product Backlog |
+| `apresentação` | preparação da apresentação (slides, roteiro, vídeos das demos; sem live demo) |
 
 ## Definição de Pronto (Definition of Done)
 Ver [CONTRIBUTING.md](../../CONTRIBUTING.md#definição-de-pronto).
