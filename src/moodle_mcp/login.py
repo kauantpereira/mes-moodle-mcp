@@ -194,7 +194,7 @@ async def login_generico(base_url: str, interacao: Interacao) -> str:
     raise LoginFalhou("Login cancelado.")
 
 
-COMANDO_TERMINAL = "uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar --url <endereço do Moodle>"
+COMANDO_TERMINAL = "uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar"
 
 
 def no_terminal(manual: bool = False) -> str:
@@ -202,7 +202,8 @@ def no_terminal(manual: bool = False) -> str:
     comando = COMANDO_TERMINAL + (" --manual" if manual else "")
     return (
         "Este login é feito no terminal, para que senha, link e token nunca passem pelo chat. "
-        f"Rode: `{comando}`. O token fica no chaveiro do sistema e o servidor passa a usá-lo."
+        f"Rode: `{comando}` (acrescente `--url <endereço>` se o servidor usa MOODLE_URL, ou `--semestre` "
+        "para outro semestre). O token fica no chaveiro do sistema e o servidor passa a usá-lo."
     )
 
 

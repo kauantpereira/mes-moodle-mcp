@@ -26,9 +26,9 @@ def executar(coro):
 
 def instalar(monkeypatch, payload=None, userid=USERID, erro=None):
     chamadas = []
-    monkeypatch.setattr(server.nucleo, "cliente", lambda: ClienteFake(userid))
+    monkeypatch.setattr(server.nucleo, "cliente", lambda semestre=None: ClienteFake(userid))
 
-    async def chamar(funcao, **params):
+    async def chamar(funcao, semestre=None, **params):
         chamadas.append((funcao, params))
         if erro:
             raise erro
@@ -206,7 +206,7 @@ def test_falha_ao_obter_site_info_nao_dispara_consulta(monkeypatch):
         async def userid(self):
             raise KeyError("userid ausente")
 
-    monkeypatch.setattr(server.nucleo, "cliente", lambda: ClienteSemIdentidade())
+    monkeypatch.setattr(server.nucleo, "cliente", lambda semestre=None: ClienteSemIdentidade())
     with pytest.raises(ToolError, match="Não foi possível confirmar"):
         executar(server.notas_da_disciplina(7))
     assert chamadas == []

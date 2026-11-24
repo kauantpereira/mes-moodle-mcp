@@ -8,4 +8,4 @@ Pré-requisito: [uv](https://docs.astral.sh/uv/) instalado.
 /plugin marketplace add kauantpereira/mes-moodle-mcpn/plugin install moodle-mcp@mes-moodle-mcp
 ```
 
-Na instalação, informe o endereço do Moodle e onde guardar os prazos ([opções](../referencia/configuracao.md)).
+Na instalação, escolha onde guardar os prazos. O endereço do Moodle não é pedido: na UFMG vale o semestre atual; outro Moodle usa a variável `MOODLE_URL` ([configuração](../referencia/configuracao.md)).

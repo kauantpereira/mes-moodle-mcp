@@ -4,10 +4,12 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 
 ## [Não lançado]
 ### Alterado
+- O plugin não pede mais o endereço do Moodle (ADR-0017): vem da variável `MOODLE_URL` ou do perfil da instituição (semestre atual). Sem `user_config` no `.mcp.json`, o servidor também sobe no Claude Desktop.
 - Mensagem de erro para `invalidtoken` em `nucleo.chamar` agora orienta como entrar de novo (tool `entrar` e alternativa provisória `MOODLE_TOKEN`).
 - Template de PR: `Closes #N` no lugar de `Fecha #N`, reversão como escolha única e itens não aplicáveis marcados como `N/A`.
 
 ### Adicionado
+- Semestre nas tools (ADR-0017): parâmetro opcional `semestre` (só aquela chamada), tool `usar_semestre` (até o servidor reiniciar) e `moodle-mcp entrar|sair --semestre`; um token por semestre, o mesmo limite de chamadas para todos.
 - Entrada sobre token expirado/inválido no guia de solução de problemas (`docs/guias/solucao-de-problemas.md`).
 - Tool `quem_sou_eu`: verifica a conexão e informa nome do aluno, site, URL e versão do Moodle (sem expor token ou dados sensíveis).
 - Janela de manutenção definida pelo perfil da instituição: nessa faixa de horário o Moodle não é chamado e a mensagem diz a partir de quando tentar; o que já está em cache continua disponível (ADR-0005).

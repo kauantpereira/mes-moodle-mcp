@@ -96,7 +96,7 @@ def test_funcao_bloqueada_nao_gasta_cota():
 
 def test_nucleo_traduz_para_mensagem_com_espera(monkeypatch):
     c, _ = cliente_limitado(1)
-    monkeypatch.setattr(nucleo, "_cliente", c)
+    nucleo._usar_cliente(c)
     asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
     with pytest.raises(ToolError, match=r"Limite de 1 chamadas ao Moodle a cada 1 min.*Tente de novo em 1 min") as exc:
         asyncio.run(nucleo.chamar("core_webservice_get_site_info"))

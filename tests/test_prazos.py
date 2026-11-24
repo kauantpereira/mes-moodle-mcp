@@ -44,7 +44,7 @@ def instalar(monkeypatch, assignments, statuses=None):
     chamadas = []
     statuses = statuses or {}
 
-    async def chamar(funcao, **params):
+    async def chamar(funcao, semestre=None, **params):
         chamadas.append((funcao, params))
         if funcao == "mod_assign_get_assignments":
             return assignments

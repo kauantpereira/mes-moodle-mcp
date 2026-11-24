@@ -7,7 +7,7 @@ import httpx
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from moodle_mcp import nao_confiavel, nucleo
+from moodle_mcp import nao_confiavel, nucleo, perfis
 from moodle_mcp.client import MoodleClient
 from moodle_mcp.server import mcp, quem_sou_eu
 
@@ -40,7 +40,7 @@ def limpar(monkeypatch):
 
 def com_resposta(monkeypatch, handler):
     c = MoodleClient(URL, TOKEN, transport=httpx.MockTransport(handler))
-    monkeypatch.setattr(nucleo, "_cliente", c)
+    nucleo._usar_cliente(c)
 
 
 def test_quem_sou_eu_devolve_so_campos_permitidos(monkeypatch):
@@ -99,7 +99,8 @@ def test_quem_sou_eu_limpa_texto_nao_confiavel(monkeypatch):
     }
 
 
-def test_quem_sou_eu_sem_url_configurada():
+def test_quem_sou_eu_sem_url_configurada(monkeypatch):
+    monkeypatch.setattr(perfis, "PERFIS", ())  # sem perfil padrão (ex.: perfil ufmg revertido)
     with pytest.raises(ToolError, match="MOODLE_URL"):
         asyncio.run(quem_sou_eu())
 

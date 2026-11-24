@@ -1,5 +1,6 @@
 """Nenhum teste toca o chaveiro real do sistema: backend do keyring em memória."""
 
+import httpx
 import keyring.core
 import pytest
 from keyring.backend import KeyringBackend
@@ -29,3 +30,21 @@ def chaveiro_falso(monkeypatch):
     falso = ChaveiroEmMemoria()
     monkeypatch.setattr(keyring.core, "_keyring_backend", falso)
     return falso
+
+
+@pytest.fixture(autouse=True)
+def sem_navegador_nem_rede_real(monkeypatch):
+    """Nenhum teste abre navegador de verdade nem chama um Moodle real.
+
+    Sem MOODLE_URL, o perfil `ufmg` é o padrão (ADR-0017): um teste distraído iria ao login da UFMG.
+    Testes que precisam do navegador ou da rede trocam estes pontos por simulações.
+    """
+    from moodle_mcp import login, navegador, nucleo
+
+    def proibido(*_args, **_kwargs):
+        pytest.fail("teste tentou abrir um navegador ou chamar um Moodle de verdade")
+
+    monkeypatch.setattr(navegador, "_async_playwright", proibido)
+    monkeypatch.setattr(navegador, "_instalar_chromium", proibido)
+    monkeypatch.setattr(nucleo, "_transporte", httpx.MockTransport(proibido))
+    monkeypatch.setattr(login, "transporte", httpx.MockTransport(proibido))

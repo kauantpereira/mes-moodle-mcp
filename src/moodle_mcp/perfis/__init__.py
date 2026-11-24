@@ -35,6 +35,10 @@ class Perfil:
     # Login específico da instituição (ex.: SSO pelo fluxo do app). None = login genérico do núcleo.
     # A assinatura é definida pela tarefa de login (#22/#23).
     login: Callable[..., Any] | None = None
+    # Instituições com um Moodle por semestre (ADR-0017): recebe o semestre como o aluno escreveu
+    # (None = o atual) e devolve a URL base daquele Moodle; ValueError com a explicação se não entender.
+    # Quem define isto pode ser o perfil padrão: sem MOODLE_URL, o núcleo usa a URL do semestre atual.
+    url_do_semestre: Callable[[str | None], str] | None = None
 
 
 GENERICO = Perfil(nome="generico")
@@ -74,3 +78,12 @@ def perfil_para(base_url: str, perfis: tuple[Perfil, ...] | None = None) -> Perf
         if host in perfil.hosts:
             return perfil
     return GENERICO
+
+
+def padrao(perfis: tuple[Perfil, ...] | None = None) -> Perfil | None:
+    """Perfil usado quando MOODLE_URL não está definida: o único que sabe montar a URL do Moodle.
+
+    Nenhum (só o genérico) ou mais de um: None, e o aluno precisa informar o endereço.
+    """
+    candidatos = [p for p in (carregados() if perfis is None else perfis) if p.url_do_semestre is not None]
+    return candidatos[0] if len(candidatos) == 1 else None
