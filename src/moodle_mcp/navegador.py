@@ -15,6 +15,7 @@ import re
 import sys
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from . import login
@@ -42,10 +43,49 @@ def _erro_playwright() -> type[Exception]:
     return Error
 
 
+_DIR_X11 = Path("/tmp/.X11-unix")
+
+
+def _dir_runtime() -> Path:
+    return Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}")
+
+
+def _achar_tela() -> dict[str, str]:
+    """Variáveis da tela da sessão gráfica do aluno, quando o app não as repassa ao servidor.
+
+    O Claude Desktop (Linux) inicia o servidor MCP só com HOME, PATH e poucas outras variáveis:
+    sem DISPLAY/WAYLAND_DISPLAY, o Chrome não abre. Procura os sockets da sessão do próprio
+    usuário (X11 em /tmp/.X11-unix, Wayland em XDG_RUNTIME_DIR) e o arquivo de autorização do X.
+    """
+    achadas: dict[str, str] = {}
+    runtime = _dir_runtime()
+    wayland = sorted(p for p in runtime.glob("wayland-*") if not p.name.endswith(".lock")) if runtime.is_dir() else []
+    if wayland:
+        achadas |= {"WAYLAND_DISPLAY": wayland[0].name, "XDG_RUNTIME_DIR": str(runtime)}
+    meus = []
+    if _DIR_X11.is_dir():
+        for sock in sorted(_DIR_X11.glob("X*")):
+            try:
+                if sock.name[1:].isdigit() and sock.stat().st_uid == os.getuid():
+                    meus.append(sock)
+            except OSError:
+                continue
+    if meus:
+        achadas["DISPLAY"] = f":{meus[0].name[1:]}"
+        candidatos = [runtime / "gdm" / "Xauthority", Path.home() / ".Xauthority", *sorted(runtime.glob(".mutter-Xwaylandauth.*"))]
+        autorizacao = next((c for c in candidatos if c.is_file()), None)
+        if autorizacao is not None and not os.environ.get("XAUTHORITY"):
+            achadas["XAUTHORITY"] = str(autorizacao)
+    return achadas
+
+
 def _tem_tela() -> bool:
-    if sys.platform.startswith("linux"):
-        return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
-    return True
+    """Há tela para abrir a janela? No Linux, completa o ambiente com a sessão do aluno se faltar."""
+    if not sys.platform.startswith("linux"):
+        return True
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        os.environ.update(_achar_tela())  # o Chrome aberto pelo Playwright herda estas variáveis
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 
 async def _instalar_chromium() -> bool:
