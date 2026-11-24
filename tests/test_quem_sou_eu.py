@@ -117,7 +117,12 @@ def test_quem_sou_eu_token_expirado(monkeypatch):
     )
     with pytest.raises(ToolError) as exc:
         asyncio.run(quem_sou_eu())
-    assert TOKEN not in str(exc.value)
+    mensagem = str(exc.value)
+    assert "entrar" in mensagem
+    assert "MOODLE_TOKEN" in mensagem
+    assert TOKEN not in mensagem
+    assert URL not in mensagem
+    assert "Token inválido" not in mensagem
 
 
 def test_quem_sou_eu_registrada_como_somente_leitura():
