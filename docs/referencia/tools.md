@@ -19,6 +19,20 @@ Toda tool que devolve texto escrito por pessoas (avisos, enunciados, descriçõe
 - O texto é limpo: sem HTML, comentários, scripts, estilos e caracteres invisíveis (largura zero, controle bidirecional, tags Unicode), que o aluno não vê na página mas o modelo leria.
 - `cortado` lista os campos encurtados pelo corte padrão (600 caracteres).
 
+## `notas_da_disciplina`
+
+Consulta os itens de avaliação de uma disciplina do aluno autenticado, incluindo nota, máximo, peso quando disponível e feedback. Recebe `courseid` (obrigatório): identificador numérico positivo do curso no Moodle. Não recebe identificador de usuário nem de grupo.
+
+A tool obtém o `userid` autenticado pelo cliente Moodle e o envia explicitamente a `gradereport_user_get_grade_items`; não usa o padrão `userid=0` nem envia `groupid`. A resposta só processa registros cujo `userid` corresponda ao autenticado. Identificadores pessoais, campos de curso desnecessários, médias, rankings e contagens de usuários não são devolvidos.
+
+Cada item tem `situacao`: `avaliada`, `ainda_nao_avaliado`, `avaliacao_oculta` ou `indeterminada`. A nota formatada é preferida para preservar escalas e notas por letra; quando ela não existe, usa-se a nota bruta numérica. O máximo usa somente o campo numérico `grademax`; `rangeformatted` não é interpretado como máximo. Máximo e peso são omitidos quando não disponíveis. Uma nota bruta igual a zero permanece zero. A tool só afirma `ainda_nao_avaliado` quando `gradeishidden`, `gradehiddenbydate` e `gradeneedsupdate` são explicitamente falsos, `graderaw` está presente e nulo, e `gradeformatted` é `-`. Hífen sem essas evidências não é tratado como nota e resulta em `indeterminada`. Campos de nota simplesmente ausentes também ficam `indeterminada`.
+
+Notas sinalizadas por `gradeishidden` ou `gradehiddenbydate` são tratadas como `avaliacao_oculta`; nota e feedback são omitidos nesse caso. Quando `gradeneedsupdate` é verdadeiro, a situação fica `indeterminada` e a nota não é mostrada, pois o valor pode ser uma mensagem de erro. Nomes e feedback continuam disponíveis quando presentes e não ocultos, inclusive em itens ainda não avaliados ou que precisam de atualização. Itens sem nome ou com estrutura inválida são ignorados. Resposta geral malformada e erro Moodle/rede falham pela tradução do núcleo; resposta válida sem itens resulta em `dados` vazio e não é descrita como ausência de avaliação. Warnings da API não são repassados porque podem incluir texto não necessário à consulta.
+
+Nomes dos itens, notas em formato textual (por exemplo, escalas) e feedback ficam em `nao_confiavel`, com limpeza de HTML e corte padrão de 600 caracteres. A resposta usa o envelope `aviso` + `dados` definido acima.
+
+**Tamanho típico medido:** 1.920 caracteres (1.940 bytes UTF-8; estimativa aproximada de 485 tokens calculada como teto de bytes/4) para um payload sintético com 12 itens, cada um com nome, nota numérica e formatada, máximo, peso e feedback curto. A medição serializou a resposta efetivamente produzida pela ferramenta em JSON compacto (`ensure_ascii=False`); é uma estimativa de tokens, não contagem do tokenizer do modelo. Não há limite arbitrário de quantidade de itens.
+
 ## `quem_sou_eu`
 Verifica se a conexão com o Moodle está ativa e informa quem está conectado, em qual site e qual versão do Moodle. Útil para diagnosticar conexão antes ou depois de uma consulta falhar.
 
