@@ -27,3 +27,4 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 
 ### Corrigido
 - Login pelo navegador no Claude Desktop (Linux): o servidor acha a tela da sessão do aluno quando o app não repassa `DISPLAY`; antes, a tool dizia que não havia navegador.
+- Login pelo navegador depois do SSO: o token do redirecionamento final é capturado mesmo quando chega por uma cadeia de redirecionamentos; antes, o Chrome oferecia abrir o `moodlemobile://` com outro programa (xdg-open).
