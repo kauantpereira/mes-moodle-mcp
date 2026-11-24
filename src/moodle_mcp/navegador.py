@@ -1,10 +1,12 @@
 """Captura do token pelo navegador no fluxo do app (ADR-0002, ADR-0016), com Playwright.
 
 Genérico (só API padrão do Moodle), usado pelo login de perfis de instituição com SSO.
-Abre uma janela no `launch.php`, o aluno faz o login da instituição e o Moodle redireciona
-para `moodlemobile://token=...`: a rota das páginas segue os redirecionamentos ela mesma e
-intercepta essa resposta, a janela fecha sozinha e o token é conferido pela assinatura do
-`passport`. Nenhuma URL, cookie ou token é registrado.
+A janela abre numa página web comum (a de login do Moodle, ou a que o perfil indicar) e o aluno
+entra como em qualquer dia, terminando numa página normal do Moodle. Com a sessão aberta, o
+servidor pede o token ao `launch.php` por baixo, com os cookies da janela: o redirecionamento
+para `moodlemobile://token=...` nunca passa pelo navegador (sem diálogo de "abrir com outro
+programa" e sem página de erro no fim). A janela mostra "Login concluído" e fecha; o token é
+conferido pela assinatura do `passport`. Nenhuma URL, cookie ou token é registrado.
 
 Ordem de navegador: Chrome instalado → Edge instalado → Chromium do Playwright (baixado uma
 vez, ~150 MB, com aviso) → login manual (o aluno cola o link no terminal: `moodle-mcp entrar --manual`).
@@ -15,7 +17,6 @@ import os
 import re
 import sys
 import time
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlsplit
@@ -122,101 +123,112 @@ async def _abrir(pw: Any, interacao: Interacao) -> Any:
         raise NavegadorIndisponivel from None
 
 
-def _procurar(texto: str | None, achado: dict[str, str]) -> bool:
+def _procurar(texto: str | None) -> str | None:
     m = _RE_LINK.search(texto or "")
-    if m:
-        achado.setdefault("link", m.group(0))
-    return bool(m)
+    return m.group(0) if m else None
 
 
 MAX_SALTOS = 10
+# Caminhos de login/SSO no host do Moodle: enquanto a janela está num deles, o aluno não entrou.
+_CAMINHOS_DE_LOGIN = ("/login", "/auth/", "/shibboleth.sso", "/saml")
 
 
-def _interceptar(achado: dict[str, str], requisicao: Any) -> Callable[[Any], Any]:
-    """Rota das páginas (documentos): segue os redirecionamentos aqui, sem o navegador.
+def _parece_logado(url: str, host: str) -> bool:
+    partes = urlsplit(url)
+    return partes.hostname == host and not any(c in partes.path.lower() for c in _CAMINHOS_DE_LOGIN)
 
-    O Playwright só chama a rota para o primeiro endereço de uma cadeia de redirecionamentos.
-    Depois do SSO, o provedor de identidade redireciona ao Moodle, que redireciona ao
-    `launch.php`, que redireciona a `moodlemobile://token=...`: se o navegador seguisse essa
-    cadeia, o último salto escaparia da rota e o Chrome ofereceria abrir o link em outro
-    programa (xdg-open), levando o token junto. Por isso a rota busca cada salto com
-    `max_redirects=0` (mesmos cookies da janela) e procura o token no Location e no HTML.
+
+async def _buscar_token(requisicao: Any, base_url: str, passport: str) -> str | None:
+    """Pede o token ao `launch.php` com a sessão da janela; None se o aluno ainda não entrou.
+
+    Segue os redirecionamentos só dentro do Moodle: ir para outro host (o login da instituição)
+    quer dizer que não há sessão ainda, e esta busca não deve abrir login nenhum.
     """
-
-    async def rota(route: Any) -> None:
-        if route.request.resource_type != "document":
-            await route.continue_()
-            return
-        resp = await route.fetch(max_redirects=0)
-        saltos = 0
-        while True:
-            if _procurar(resp.headers.get("location"), achado) or (
-                "html" in resp.headers.get("content-type", "") and _procurar(await resp.text(), achado)
-            ):
-                await route.fulfill(status=200, content_type="text/html; charset=utf-8", body=_PAGINA_FIM)
-                return
-            destino = resp.headers.get("location")
-            if not (300 <= resp.status < 400 and destino) or saltos >= MAX_SALTOS:
-                break
-            destino = urljoin(resp.url, destino)
-            if urlsplit(destino).scheme not in ("http", "https"):
-                break
-            resp = await requisicao.get(destino, max_redirects=0)
-            saltos += 1
-        if saltos == 0:
-            await route.fulfill(response=resp)
-        else:
-            # A janela vai direto ao fim da cadeia (o navegador busca de novo só esta página).
-            await route.fulfill(status=302, headers={"location": resp.url})
-
-    return rota
+    host = urlsplit(base_url).hostname
+    url = login.url_de_lancamento(base_url, passport)
+    for _ in range(MAX_SALTOS):
+        resp = await requisicao.get(url, max_redirects=0)
+        destino = resp.headers.get("location")
+        link = _procurar(destino)
+        if link is None and "html" in resp.headers.get("content-type", ""):
+            link = _procurar(await resp.text())
+        if link is not None:
+            return link
+        if not (300 <= resp.status < 400 and destino):
+            return None
+        url = urljoin(resp.url, destino)
+        if urlsplit(url).hostname != host:
+            return None
+    return None
 
 
-async def capturar_token(base_url: str, interacao: Interacao, tempo_s: int = TEMPO_LOGIN_S) -> str:
-    """Abre o navegador no fluxo do app e devolve o token. NavegadorIndisponivel se não abrir."""
+async def capturar_token(
+    base_url: str, interacao: Interacao, tempo_s: int = TEMPO_LOGIN_S, pagina_inicial: str | None = None
+) -> str:
+    """Abre o navegador para o aluno entrar e devolve o token. NavegadorIndisponivel se não abrir.
+
+    `pagina_inicial`: onde a janela abre (padrão: o login do Moodle). Se for outra página da
+    instituição (ex.: um portal de turmas no mesmo host), depois do login a janela vai ao Moodle.
+    """
     if not _tem_tela():
         raise NavegadorIndisponivel
     try:
         gerenciador = _async_playwright()
     except ImportError:
         raise NavegadorIndisponivel from None
+    base_url = base_url.rstrip("/")
+    host = urlsplit(base_url).hostname or ""
     passport = login.novo_passport()
-    achado: dict[str, str] = {}
+    link: str | None = None
     try:
         async with gerenciador as pw:
             navegador = await _abrir(pw, interacao)
             try:
                 contexto = await navegador.new_context()
-                await contexto.route("**/*", _interceptar(achado, contexto.request))
                 pagina = await contexto.new_page()
-                # Rede de segurança: o Chrome avisa no Console quando não consegue abrir moodlemobile://.
-                pagina.on("console", lambda msg: _procurar(msg.text, achado))
-                await pagina.goto(login.url_de_lancamento(base_url, passport))
+                await pagina.goto(pagina_inicial or f"{base_url}/login/index.php")
                 await interacao.avisar("Abri o login do Moodle no navegador. Entre com a sua conta; a janela fecha sozinha.")
                 limite = time.monotonic() + tempo_s
                 proximo_aviso = time.monotonic() + INTERVALO_AVISO_S
-                while "link" not in achado:
+                tentados: set[str] = set()
+                while link is None:
                     if pagina.is_closed():
-                        raise LoginFalhou("A janela do navegador foi fechada antes de concluir o login.")
+                        raise LoginFalhou(
+                            "A janela do navegador foi fechada antes de concluir o login. "
+                            "Só abra o login de novo se o aluno pedir."
+                        )
                     agora = time.monotonic()
                     if agora > limite:
-                        raise LoginFalhou("Tempo esgotado sem concluir o login no navegador. Tente entrar de novo.")
+                        raise LoginFalhou("Tempo esgotado sem concluir o login no navegador. Só tente de novo se o aluno pedir.")
                     if agora >= proximo_aviso:  # progresso mantém a tool viva no cliente
                         await interacao.avisar(f"Aguardando o login no navegador ({int((limite - agora) // 60) + 1} min restantes)...")
                         proximo_aviso = agora + INTERVALO_AVISO_S
+                    url = pagina.url
+                    if url not in tentados and _parece_logado(url, host):
+                        tentados.add(url)
+                        if url == base_url or url.startswith(base_url + "/"):
+                            link = await _buscar_token(contexto.request, base_url, passport)
+                            continue
+                        # Outra página da instituição (ex.: portal de turmas): leva a janela ao Moodle.
+                        await pagina.goto(f"{base_url}/my/")
+                        continue
                     await pagina.wait_for_timeout(500)
+                await pagina.set_content(_PAGINA_FIM)
+                await pagina.wait_for_timeout(1500)
             finally:
                 await navegador.close()
     except _erro_playwright():
         # Ex.: o aluno fechou a janela no meio de uma espera. Sem detalhes (podem ter URL).
-        raise LoginFalhou("O navegador fechou ou falhou antes de concluir o login. Tente entrar de novo.") from None
-    return login.decodificar_token_do_app(base_url, passport, achado["link"])
+        raise LoginFalhou(
+            "O navegador fechou ou falhou antes de concluir o login. Só abra o login de novo se o aluno pedir."
+        ) from None
+    return login.decodificar_token_do_app(base_url, passport, link)
 
 
-async def login_pelo_navegador(base_url: str, interacao: Interacao) -> str:
+async def login_pelo_navegador(base_url: str, interacao: Interacao, pagina_inicial: str | None = None) -> str:
     """Login de perfil com SSO: navegador; sem navegador, login manual (só no terminal)."""
     try:
-        return await capturar_token(base_url, interacao)
+        return await capturar_token(base_url, interacao, pagina_inicial=pagina_inicial)
     except NavegadorIndisponivel:
         if not interacao.pode_perguntar:
             raise LoginFalhou("Não consegui abrir um navegador. " + login.no_terminal(manual=True)) from None

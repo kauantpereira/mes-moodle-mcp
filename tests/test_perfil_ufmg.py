@@ -39,42 +39,39 @@ class Interacao:
 
 # ---------- Playwright simulado ----------
 
+IDP = "https://sistemas.ufmg.br/idp/login.jsp"
+
 
 class Resposta:
-    def __init__(self, headers, corpo="", status=200, url=BASE + "/admin/tool/mobile/launch.php"):
+    def __init__(self, headers, corpo="", status=200, url=BASE):
         self.headers, self._corpo, self.status, self.url = headers, corpo, status, url
 
     async def text(self):
         return self._corpo
 
 
-class Rota:
-    def __init__(self, resposta, tipo="document"):
-        self.resposta, self.cumprida, self.seguiu = resposta, None, False
-        self.request = type("Pedido", (), {"resource_type": tipo})()
+class Requisicao:
+    """APIRequestContext simulado (mesmos cookies da janela): responde conforme o modo."""
 
-    async def continue_(self):
-        self.seguiu = True
+    def __init__(self, nav):
+        self.nav, self.pedidos = nav, []
 
-    async def fetch(self, max_redirects=None):
-        assert max_redirects == 0
-        return self.resposta
-
-    async def fulfill(self, **kw):
-        self.cumprida = kw
+    async def get(self, url, max_redirects=None):
+        assert max_redirects == 0  # nada de seguir redirecionamentos sozinho
+        self.pedidos.append(url)
+        return self.nav.modo.servir(url)
 
 
 class Pagina:
     def __init__(self, nav):
-        self.nav, self.fechada, self.ouvintes = nav, False, {}
-
-    def on(self, evento, f):
-        self.ouvintes[evento] = f
+        self.nav, self.fechada, self.url, self.conteudo = nav, False, "about:blank", None
 
     async def goto(self, url):
         self.nav.urls.append(url)
-        passport = parse_qs(urlsplit(url).query)["passport"][0]
-        await self.nav.modo(self, passport)
+        self.url = self.nav.modo.navegar(url)
+
+    async def set_content(self, html):
+        self.conteudo = html
 
     def is_closed(self):
         return self.fechada
@@ -83,22 +80,17 @@ class Pagina:
         self.nav.esperas += 1
         if self.nav.fechar_na_espera:
             raise ErroPlaywright("Target page, context or browser has been closed")
-        if self.nav.esperas > 3:
+        if self.nav.esperas > 3 and self.conteudo is None:
             self.fechada = True
 
 
 class Contexto:
     def __init__(self, nav):
-        self.nav = nav
-
-    request = None  # APIRequestContext: os testes da cadeia de redirecionamentos usam um simulado
-
-    async def route(self, padrao, handler):
-        assert padrao == "**/*"
-        self.nav.handler = handler
+        self.nav, self.request = nav, nav.requisicao
 
     async def new_page(self):
-        return Pagina(self.nav)
+        self.nav.pagina = Pagina(self.nav)
+        return self.nav.pagina
 
 
 class Navegador:
@@ -122,7 +114,8 @@ class Playwright:
         self.esperas = 0
         self.fechado = False
         self.fechar_na_espera = False
-        self.handler = None
+        self.requisicao = Requisicao(self)
+        self.pagina = None
         self.chromium = self
 
     async def launch(self, headless, channel=None):
@@ -139,28 +132,68 @@ class Playwright:
         return False
 
 
-async def redireciona(pagina, passport):
-    """O Moodle responde ao launch.php com Location: moodlemobile://token=..."""
-    pagina.nav.rota = Rota(Resposta({"location": link_do_app(BASE, passport)}, status=303))
-    await pagina.nav.handler(pagina.nav.rota)
+def _launch(url):
+    """passport do pedido ao launch.php (o servidor que escolhe; o Moodle assina com ele)."""
+    assert url.startswith(BASE + "/admin/tool/mobile/launch.php?")
+    return parse_qs(urlsplit(url).query)["passport"][0]
 
 
-async def via_console(pagina, passport):
-    """Sem Location: o token só aparece no Console (o Chrome não abre moodlemobile://)."""
-    pagina.nav.rota = None
-    pagina.ouvintes["console"](type("Msg", (), {"text": "Failed to launch '" + link_do_app(BASE, passport) + "'"}))
+class Logado:
+    """O aluno entra e a janela termina no Moodle; o launch.php responde com o token no Location."""
+
+    def navegar(self, url):
+        return BASE + "/my/"
+
+    def servir(self, url):
+        return Resposta({"location": link_do_app(BASE, _launch(url))}, status=303)
 
 
-async def nunca(pagina, passport):
-    pagina.nav.rota = None
+class ViaPortal(Logado):
+    """A janela abre no Minhas Turmas (mesmo host, fora do Moodle do semestre)."""
+
+    def navegar(self, url):
+        return url if "minhasturmas" in url else BASE + "/my/"
+
+
+class ViaHtml(Logado):
+    """O launch.php devolve uma página que tenta abrir moodlemobile:// por JavaScript."""
+
+    def servir(self, url):
+        corpo = f"<script>location.href='{link_do_app(BASE, _launch(url))}'</script>"
+        return Resposta({"content-type": "text/html; charset=utf-8"}, corpo)
+
+
+class SemSessao:
+    """A janela parece logada (página do Moodle para visitantes), mas o launch.php manda ao IdP."""
+
+    def navegar(self, url):
+        return BASE + "/"
+
+    def servir(self, url):
+        saltos = {
+            "launch.php": Resposta({"location": "/20262/login/index.php"}, status=303, url=url),
+            "login/index.php": Resposta({"location": "/20262/auth/shibboleth/index.php"}, status=303, url=BASE + "/login/index.php"),
+            "shibboleth": Resposta({"location": IDP}, status=302, url=BASE + "/auth/shibboleth/index.php"),
+        }
+        return next(r for chave, r in saltos.items() if chave in url)
+
+
+class Nunca:
+    """O aluno não termina o login: a janela fica no IdP."""
+
+    def navegar(self, url):
+        return IDP
+
+    def servir(self, url):
+        raise AssertionError("sem sessão não há busca do token")
 
 
 @pytest.fixture
 def simular(monkeypatch):
     monkeypatch.setattr(navegador, "_tem_tela", lambda: True)
 
-    def criar(canais_ok=("chrome",), modo=redireciona, instala=True):
-        pw = Playwright(set(canais_ok), modo)
+    def criar(canais_ok=("chrome",), modo=None, instala=True):
+        pw = Playwright(set(canais_ok), modo or Logado())
         monkeypatch.setattr(navegador, "_async_playwright", lambda: pw)
         instalacoes = []
 
@@ -185,12 +218,14 @@ def rodar(coro):
 
 
 def test_perfil_ufmg_escolhido_pelo_host():
+    from moodle_mcp.perfis import ufmg
+
     perfil = perfil_para(BASE)
     assert perfil.nome == "ufmg"
     assert perfil.fuso == "America/Sao_Paulo"
     assert perfil.janelas_manutencao == ((time(1, 30), time(6, 0)),)
-    assert perfil.login is navegador.login_pelo_navegador
-    assert nucleo.metodo_de_login(BASE) is navegador.login_pelo_navegador
+    assert perfil.login is ufmg.entrar
+    assert nucleo.metodo_de_login(BASE) is ufmg.entrar
     assert perfil_para("https://moodle.exemplo.edu") is GENERICO
 
 
@@ -208,20 +243,40 @@ def test_reverter_o_perfil_volta_ao_login_generico(monkeypatch):
 # ---------- captura pelo navegador ----------
 
 
-def test_captura_pelo_location_e_fecha_a_janela(simular):
+def test_login_na_pagina_do_moodle_e_token_por_baixo(simular):
+    """A janela abre no login do Moodle, o aluno entra e termina numa página normal; o token vem
+    do launch.php pedido com a sessão da janela, sem o navegador ver o moodlemobile://."""
     pw = simular(canais_ok=("chrome",))
     interacao = Interacao()
     assert rodar(navegador.login_pelo_navegador(BASE, interacao)) == TOKEN
     assert pw.tentativas == ["chrome"]
-    assert pw.urls[0].startswith(BASE + "/admin/tool/mobile/launch.php?")
-    assert pw.rota.cumprida["body"].count("Login concluído") == 1  # o aluno não vê o link
+    assert pw.urls == [BASE + "/login/index.php"]  # a janela nunca vai ao launch.php
+    assert len(pw.requisicao.pedidos) == 1
+    assert "Login concluído" in pw.pagina.conteudo and "token" not in pw.pagina.conteudo
     assert pw.fechado
     assert all(TOKEN not in a and "token=" not in a for a in interacao.avisos)
 
 
-def test_captura_pelo_console(simular):
-    pw = simular(canais_ok=("chrome",), modo=via_console)
+def test_pagina_inicial_do_portal_leva_ao_moodle_do_semestre(simular):
+    from moodle_mcp.perfis import ufmg
+
+    pw = simular(modo=ViaPortal())
+    assert rodar(navegador.login_pelo_navegador(BASE, Interacao(), pagina_inicial=ufmg.MINHAS_TURMAS)) == TOKEN
+    assert pw.urls == [ufmg.MINHAS_TURMAS, BASE + "/my/"]
+
+
+def test_token_na_pagina_html_do_launch(simular):
+    simular(modo=ViaHtml())
     assert rodar(navegador.login_pelo_navegador(BASE, Interacao())) == TOKEN
+
+
+def test_sem_sessao_a_busca_nao_segue_para_o_login_da_instituicao(simular):
+    """Se o Moodle ainda manda ao IdP, a busca para ali (não abre login por baixo) e a janela espera."""
+    pw = simular(modo=SemSessao())
+    with pytest.raises(LoginFalhou, match="fechada"):
+        rodar(navegador.login_pelo_navegador(BASE, Interacao()))
+    assert all(urlsplit(u).hostname == "virtual.ufmg.br" for u in pw.requisicao.pedidos)
+    assert len(pw.requisicao.pedidos) == 3  # uma tentativa por página nova, não a cada meio segundo
 
 
 def test_ordem_chrome_edge_chromium(simular):
@@ -281,12 +336,12 @@ def test_sem_tela_nao_tenta_abrir(monkeypatch, simular):
 
 
 def test_janela_fechada_pelo_aluno(simular):
-    pw = simular(modo=nunca)
-    with pytest.raises(LoginFalhou, match="fechada"):
+    pw = simular(modo=Nunca())
+    with pytest.raises(LoginFalhou, match="fechada.*se o aluno pedir"):
         rodar(navegador.login_pelo_navegador(BASE, Interacao()))
     assert pw.fechado
 
-    pw = simular(modo=nunca)
+    pw = simular(modo=Nunca())
     pw.fechar_na_espera = True
     with pytest.raises(LoginFalhou, match="fechou") as exc:
         rodar(navegador.login_pelo_navegador(BASE, Interacao()))
@@ -294,18 +349,10 @@ def test_janela_fechada_pelo_aluno(simular):
 
 
 def test_tempo_esgotado(simular):
-    pw = simular(modo=nunca)
+    pw = simular(modo=Nunca())
     with pytest.raises(LoginFalhou, match="Tempo esgotado"):
         rodar(navegador.capturar_token(BASE, Interacao(), tempo_s=0))
     assert pw.fechado
-
-
-def test_pagina_sem_token_segue_normal(simular):
-    """Respostas do launch.php sem token (ex.: tela de login) passam intactas ao navegador."""
-    rota = Rota(Resposta({"content-type": "text/html"}, "<form>login</form>"))
-    achado = {}
-    asyncio.run(navegador._interceptar(achado, Requisicao())(rota))
-    assert achado == {} and rota.cumprida == {"response": rota.resposta}
 
 
 @pytest.mark.parametrize("primeiro", ["moodle_mcp.server", "moodle_mcp.perfis", "moodle_mcp.client"])
@@ -381,59 +428,3 @@ def test_reverter_o_perfil_volta_a_pedir_o_endereco(monkeypatch):
     with pytest.raises(ToolError, match="MOODLE_URL"):
         nucleo.url_do_moodle()
 
-
-# ---------- cadeia de redirecionamentos depois do SSO ----------
-
-
-class Requisicao:
-    """APIRequestContext simulado: devolve as respostas de cada salto, em ordem."""
-
-    def __init__(self, *respostas):
-        self.respostas, self.pedidos = list(respostas), []
-
-    async def get(self, url, max_redirects=None):
-        assert max_redirects == 0
-        self.pedidos.append(url)
-        return self.respostas.pop(0)
-
-
-def test_token_no_fim_da_cadeia_de_redirecionamentos():
-    """SSO → Moodle → launch.php → moodlemobile://: o Playwright só chama a rota no primeiro
-    endereço, então a rota segue os saltos ela mesma e o Chrome nunca vê o moodlemobile://."""
-    achado: dict[str, str] = {}
-    link = link_do_app(BASE, "pp")
-    requisicao = Requisicao(Resposta({"location": link}, status=303))
-    rota = Rota(Resposta({"location": "/20262/admin/tool/mobile/launch.php?passport=pp"}, status=303, url=BASE + "/auth/callback"))
-    rodar(navegador._interceptar(achado, requisicao)(rota))
-    assert achado["link"] == link
-    assert requisicao.pedidos == ["https://virtual.ufmg.br/20262/admin/tool/mobile/launch.php?passport=pp"]
-    assert "Login concluído" in rota.cumprida["body"]
-
-
-def test_cadeia_sem_token_leva_a_janela_ao_ultimo_endereco():
-    achado: dict[str, str] = {}
-    requisicao = Requisicao(Resposta({"content-type": "text/html"}, corpo="<h1>Painel</h1>", url=BASE + "/my/"))
-    rota = Rota(Resposta({"location": "/20262/my/"}, status=302, url=BASE + "/login/index.php"))
-    rodar(navegador._interceptar(achado, requisicao)(rota))
-    assert achado == {}
-    assert rota.cumprida == {"status": 302, "headers": {"location": BASE + "/my/"}}
-
-
-def test_recursos_que_nao_sao_paginas_seguem_sem_busca():
-    rota = Rota(Resposta({}), tipo="image")
-    rodar(navegador._interceptar({}, Requisicao())(rota))
-    assert rota.seguiu and rota.cumprida is None
-
-
-def test_redirecionamento_para_outro_esquema_nao_e_seguido():
-    requisicao = Requisicao()
-    rota = Rota(Resposta({"location": "intent://algo"}, status=302))
-    rodar(navegador._interceptar({}, requisicao)(rota))
-    assert requisicao.pedidos == [] and rota.cumprida["response"].status == 302
-
-
-def test_cadeia_longa_para_no_limite():
-    saltos = [Resposta({"location": f"/p{i}"}, status=302, url=f"{BASE}/p{i - 1}") for i in range(1, 30)]
-    requisicao = Requisicao(*saltos)
-    rodar(navegador._interceptar({}, requisicao)(Rota(Resposta({"location": "/p0"}, status=302))))
-    assert len(requisicao.pedidos) == navegador.MAX_SALTOS

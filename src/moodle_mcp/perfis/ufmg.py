@@ -4,7 +4,8 @@
 - Um Moodle por semestre (ADR-0017): `virtual.ufmg.br/AAAAS` (ex.: `/20262`). Sem MOODLE_URL, este é
   o perfil padrão e vale o semestre atual, calculado pela data: janeiro a junho → 1º, julho a
   dezembro → 2º. O aluno pode pedir outro semestre como `2026.1`, `20261`, `anterior` ou `atual`.
-- Login: SSO (minhaUFMG) pelo fluxo do app, com o navegador (ADR-0002, ADR-0016).
+- Login: SSO (minhaUFMG) com o navegador (ADR-0002, ADR-0016). A janela abre no Minhas Turmas, a
+  página que o aluno já usa; depois do login, o servidor pega o token do app com a sessão.
 - Fuso de Brasília e a janela diária de backup do Moodle (01h30–06h00), em que o servidor
   não deve chamar o Moodle (ADR-0005; Políticas de Uso do Moodle da DTI/UFMG).
 """
@@ -13,10 +14,12 @@ import re
 from collections.abc import Callable
 from datetime import date, time
 
+from ..login import Interacao
 from ..navegador import login_pelo_navegador
 from . import Perfil
 
 ENDERECO = "https://virtual.ufmg.br"
+MINHAS_TURMAS = f"{ENDERECO}/minhasturmas/"
 hoje: Callable[[], date] = date.today  # trocado nos testes
 
 
@@ -44,11 +47,15 @@ def url_do_semestre(semestre: str | None) -> str:
     return f"{ENDERECO}/{codigo}"
 
 
+async def entrar(base_url: str, interacao: Interacao) -> str:
+    return await login_pelo_navegador(base_url, interacao, pagina_inicial=MINHAS_TURMAS)
+
+
 PERFIL = Perfil(
     nome="ufmg",
     hosts=frozenset({"virtual.ufmg.br"}),
     fuso="America/Sao_Paulo",
     janelas_manutencao=((time(1, 30), time(6, 0)),),
-    login=login_pelo_navegador,
+    login=entrar,
     url_do_semestre=url_do_semestre,
 )
