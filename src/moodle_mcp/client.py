@@ -8,7 +8,8 @@ Garantias deste módulo:
 - o token vai no corpo do POST, nunca na URL, e não aparece em mensagens de erro;
 - token só trafega por HTTPS (HTTP apenas para um Moodle local, em localhost);
 - downloads só do host do próprio Moodle, inclusive nos redirecionamentos;
-- chamadas e downloads passam pelo limite de chamadas (ADR-0005), antes da rede.
+- chamadas e downloads passam pelo limite de chamadas (ADR-0005), antes da rede;
+- dados que mudam pouco vêm do cache curto (ADR-0005), sem rede e sem contar no limite.
 """
 
 from typing import Any
@@ -16,6 +17,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from .cache import CacheCurto, chave
 from .limite import Limitador
 
 TIMEOUT = httpx.Timeout(30.0)
@@ -85,6 +87,7 @@ class MoodleClient:
         token: str,
         transport: httpx.AsyncBaseTransport | None = None,
         limitador: Limitador | None = None,
+        cache: CacheCurto | None = None,
     ):
         if not token:
             raise ValueError("token vazio")
@@ -95,6 +98,7 @@ class MoodleClient:
         self._http = httpx.AsyncClient(timeout=TIMEOUT, transport=transport)
         self._site_info: dict[str, Any] | None = None
         self.limitador = limitador or Limitador()
+        self.cache = CacheCurto() if cache is None else cache
 
     def __repr__(self) -> str:  # nunca expor o token
         return f"MoodleClient({self.base_url!r})"
@@ -102,15 +106,22 @@ class MoodleClient:
     async def call(self, wsfunction: str, **params: Any) -> Any:
         if wsfunction not in FUNCOES_PERMITIDAS:
             raise FuncaoNaoPermitida(f"{wsfunction} não está na lista de funções de leitura")
+        achatados = _achatar(params)
+        k = chave(wsfunction, achatados)
+        if self.cache.guarda(wsfunction):
+            achou, dados = self.cache.obter(k)
+            if achou:
+                return dados
         self.limitador.registrar()
         resp = await self._http.post(
             f"{self.base_url}/webservice/rest/server.php",
             params={"moodlewsrestformat": "json", "wsfunction": wsfunction},
-            data={"wstoken": self._token, **_achatar(params)},
+            data={"wstoken": self._token, **achatados},
         )
         resp.raise_for_status()
         dados = resp.json()
         _checar_erro(dados)
+        self.cache.salvar(k, dados)
         return dados
 
     async def site_info(self) -> dict[str, Any]:
