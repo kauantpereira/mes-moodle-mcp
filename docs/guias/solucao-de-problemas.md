@@ -18,3 +18,14 @@
 ## "O Moodle está em manutenção"
 - **Causa:** algumas instituições reservam um horário fixo para manutenção do Moodle (ex.: backup de madrugada). Nesse horário o plugin não chama o Moodle, para não atrapalhar a manutenção.
 - **O que fazer:** tente de novo a partir do horário indicado na mensagem. O que foi consultado há poucos minutos (lista de disciplinas, conteúdo) ainda pode aparecer, porque vem do cache.
+
+## Login
+
+| Sintoma | Causa | O que fazer |
+|---|---|---|
+| "Este cliente MCP não mostra formulários de login..." | O cliente não suporta elicitation no meio da tool | Entre pelo terminal: `uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar --url <endereço do Moodle>`. |
+| "Usuário ou senha incorretos." | Senha errada, ou o Moodle usa login da instituição (SSO) | Confira; com SSO, escolha o fluxo do app. |
+| "O Moodle recusou o login por senha (o site pode usar só SSO)." | O site não aceita senha pelo app | Escolha o fluxo do app. |
+| "O link não corresponde a este login" | Link de outra tentativa ou de outro endereço do Moodle | Gere um link novo pelo link mostrado agora; use o mesmo endereço configurado no plugin. |
+| "MOODLE_TOKEN está definida no ambiente..." | Variável provisória de desenvolvimento | Remova `MOODLE_TOKEN` do ambiente e reinicie o servidor. |
+| `entrar` responde `token_no_chaveiro: false` | Sem chaveiro do sistema (comum em Linux sem Secret Service) | Instale/ative um chaveiro (ex.: GNOME Keyring); sem ele, o login vale até o servidor reiniciar. |
