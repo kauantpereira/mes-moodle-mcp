@@ -6,7 +6,7 @@
 Faz login no Moodle: troca de conta ou renova um token expirado/revogado. Não é preciso chamá-la antes das outras tools: sem login, a primeira tool chamada já abre o login e continua a resposta.
 
 - Parâmetros: nenhum.
-- Como entra: pelo login do perfil da instituição, se houver. O servidor nunca pergunta nada pelo chat (sem formulário/elicitation): quando o login precisa de senha ou do link do login manual, a tool responde com erro e o comando de terminal `moodle-mcp entrar` (ou `moodle-mcp entrar --manual`). Depois do login no terminal, o servidor já usa o token novo do chaveiro, sem reiniciar.
+- Como entra: pelo login do perfil da instituição, se houver (perfil `ufmg`: abre o navegador no login da UFMG; a janela fecha sozinha ao concluir; sem Chrome nem Edge, baixa uma vez o navegador do Playwright, ~150 MB; sem navegador, devolve o comando do login manual no terminal). O servidor nunca pergunta nada pelo chat (sem formulário/elicitation): quando o login precisa de senha ou do link do login manual, a tool responde com erro e o comando de terminal `moodle-mcp entrar` (ou `moodle-mcp entrar --manual`). Depois do login no terminal, o servidor já usa o token novo do chaveiro, sem reiniciar.
 - Sem perfil com login (Moodle genérico): sempre o comando de terminal, que pergunta se o aluno entra com **senha** do Moodle (`login/token.php`) ou pelo **fluxo do app** (abre o link do `launch.php`, faz o login e cola o `moodlemobile://token=...`).
 - Com `MOODLE_TOKEN` definida: erro (a variável tem prioridade; remova-a para usar o login).
 - Pode levar alguns minutos (o aluno está fazendo o login).
