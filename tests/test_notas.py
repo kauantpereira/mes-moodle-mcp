@@ -20,13 +20,22 @@ class ClienteFake:
         return self._userid
 
 
+def com_login(cliente):
+    """Substitui `nucleo.cliente_com_login` (login sob demanda) por um cliente pronto."""
+
+    async def obter(semestre=None):
+        return cliente
+
+    return obter
+
+
 def executar(coro):
     return asyncio.run(coro)
 
 
 def instalar(monkeypatch, payload=None, userid=USERID, erro=None):
     chamadas = []
-    monkeypatch.setattr(server.nucleo, "cliente", lambda semestre=None: ClienteFake(userid))
+    monkeypatch.setattr(server.nucleo, "cliente_com_login", com_login(ClienteFake(userid)))
 
     async def chamar(funcao, semestre=None, **params):
         chamadas.append((funcao, params))
@@ -206,7 +215,7 @@ def test_falha_ao_obter_site_info_nao_dispara_consulta(monkeypatch):
         async def userid(self):
             raise KeyError("userid ausente")
 
-    monkeypatch.setattr(server.nucleo, "cliente", lambda semestre=None: ClienteSemIdentidade())
+    monkeypatch.setattr(server.nucleo, "cliente_com_login", com_login(ClienteSemIdentidade()))
     with pytest.raises(ToolError, match="Não foi possível confirmar"):
         executar(server.notas_da_disciplina(7))
     assert chamadas == []
@@ -244,3 +253,35 @@ def test_payload_sintetico_tipico_mede_resposta_abaixo_de_2000_tokens(monkeypatc
     assert len(serializado) == 1920
     assert len(serializado.encode("utf-8")) == 1940
     assert tokens_estimados < 2000
+
+
+def test_sem_token_abre_o_login_como_as_outras_tools(monkeypatch):
+    """Login sob demanda (ADR-0016): sem token, a tool abre o login em vez de mandar usar `entrar`."""
+    import httpx
+
+    from moodle_mcp import perfis
+    from moodle_mcp.perfis import Perfil
+
+    monkeypatch.setenv("MOODLE_URL", "https://moodle.exemplo.edu")
+    monkeypatch.delenv("MOODLE_TOKEN", raising=False)
+    server.nucleo._reiniciar()
+    logins = []
+
+    async def entrar(base_url, interacao):
+        logins.append(base_url)
+        return "token-ficticio-123"
+
+    monkeypatch.setattr(perfis, "PERFIS", (Perfil(nome="teste", hosts=frozenset({"moodle.exemplo.edu"}), login=entrar),))
+
+    def responder(request):
+        if request.url.params.get("wsfunction") == "core_webservice_get_site_info":
+            return httpx.Response(200, json={"userid": USERID})
+        return httpx.Response(200, json=usergrades(grade("Prova", graderaw=8, gradeformatted="8,00")))
+
+    monkeypatch.setattr(server.nucleo, "_transporte", httpx.MockTransport(responder))
+    try:
+        resultado = executar(server.notas_da_disciplina(7))
+    finally:
+        server.nucleo._reiniciar()
+    assert logins == ["https://moodle.exemplo.edu"]
+    assert resultado["dados"]

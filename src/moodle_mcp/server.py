@@ -128,7 +128,9 @@ _LIMITE_MAXIMO = 8
 _LIMITE_TEXTO = 120
 _LIMITE_CHAMADAS_STATUS = 15
 _FUSO_PADRAO = "America/Sao_Paulo"
-_TIPOS_ARQUIVO = {"filetypes", "accepted_file_types", "acceptedtypes"}
+# Config do plugin de envio de arquivos com os tipos aceitos na tarefa (mod/assign/submission/file:
+# `set_config('filetypeslist', ...)`); `mod_assign_get_assignments` a devolve com esse `name`.
+_CONFIG_TIPOS_ARQUIVO = "filetypeslist"
 
 
 def _configuracao_tipos_arquivo(configs: Any) -> str:
@@ -136,7 +138,7 @@ def _configuracao_tipos_arquivo(configs: Any) -> str:
         return ""
     for config in configs:
         if isinstance(config, dict) and isinstance(config.get("name"), str):
-            if config["name"].casefold() in _TIPOS_ARQUIVO and isinstance(config.get("value"), str):
+            if config["name"] == _CONFIG_TIPOS_ARQUIVO and isinstance(config.get("value"), str):
                 return config["value"]
     return ""
 
@@ -164,15 +166,7 @@ async def detalhes_da_tarefa(
     if any(isinstance(valor, bool) or not isinstance(valor, int) or valor <= 0 for valor in (courseid, assignmentid)):
         raise ToolError("Informe identificadores válidos de disciplina e tarefa do Moodle.")
 
-    try:
-        userid = await nucleo.cliente(semestre).userid()
-    except ToolError:
-        raise
-    except Exception:
-        raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.") from None
-    if isinstance(userid, bool) or not isinstance(userid, int) or userid <= 0:
-        raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.")
-
+    # O Moodle filtra pelo usuário do token: não é preciso (nem se envia) userid.
     dados = await nucleo.chamar("mod_assign_get_assignments", semestre=semestre, courseids=[courseid])
     if not isinstance(dados, dict) or not isinstance(dados.get("courses"), list):
         raise ToolError("O Moodle retornou uma resposta inválida ao consultar a tarefa.")
@@ -432,7 +426,7 @@ async def notas_da_disciplina(
 
     # Não usar userid=0: em Moodle, esse padrão pode representar todos os alunos.
     try:
-        userid = await nucleo.cliente(semestre).userid()
+        userid = await (await nucleo.cliente_com_login(semestre)).userid()  # sem token, abre o login
     except ToolError:
         raise
     except Exception:
