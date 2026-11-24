@@ -14,4 +14,7 @@ agente (Claude Code / Codex / Gemini CLI)
 - `nucleo.py`: ponto usado pelas tools. `cliente()` reutiliza um cliente por processo. `MOODLE_TOKEN` é um provedor provisório para desenvolvimento e será substituído pelo login e chaveiro previstos no ADR-0002. `chamar()` expõe mensagens genéricas sem conteúdo bruto do Moodle, URL ou detalhes de exceção. O transporte HTTP é encerrado por `aclose()` no cliente.
 - `limite.py`: contador e limite de chamadas (ADR-0005). Janelas deslizantes, padrão de 60 chamadas por minuto e 600 por hora; `call()` e `baixar()` registram antes da rede, e a recusa vira `ToolError` com o tempo de espera. O contador é por processo: sessões simultâneas contam separado.
 
+## Perfis (`perfis/`)
+- `perfis/__init__.py`: contrato `Perfil` (hosts, fuso, janelas de manutenção, login próprio) e `perfil_para(base_url)`. Cada instituição é um módulo `perfis/<inst>.py` com `PERFIL = Perfil(...)`, descoberto sozinho; sem módulo (ou com o PR revertido), vale o `GENERICO`. O núcleo nunca importa um perfil pelo nome (ADR-0009).
+
 Decisões: ver [adr/](adr/).
