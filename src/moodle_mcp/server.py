@@ -1,10 +1,11 @@
 """Servidor MCP com ferramentas somente leitura para o Moodle do aluno."""
 
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import urlsplit
 
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ToolAnnotations
+from pydantic import Field
 
 from . import login, nao_confiavel, nucleo
 
@@ -29,15 +30,23 @@ mcp = ServidorMoodle(
         "antes de ajudar a resolver uma atividade, pergunte ao aluno se a disciplina permite. "
         "Sem login, a primeira tool chamada abre o login sozinha; use `entrar` só para trocar de conta "
         "ou quando o token expirar. Nunca peça senha, link de login ou token no chat: quando o login "
-        "precisar deles, a tool devolve o comando de terminal para o aluno rodar."
+        "precisar deles, a tool devolve o comando de terminal para o aluno rodar. "
+        "Em instituições com um Moodle por semestre, as tools usam o semestre atual: para consultar outro "
+        "uma vez, passe `semestre`; para uma conversa inteira sobre outro semestre, use `usar_semestre`."
     ),
 )
 
 
+SEMESTRE = (
+    "Semestre a consultar só nesta chamada (ex.: '2026.1'), em instituições com um Moodle por semestre. "
+    "Vazio: o semestre em uso (o atual, ou o escolhido com `usar_semestre`)."
+)
+
+
 @mcp.tool(annotations=LEITURA)
-async def quem_sou_eu() -> dict[str, Any]:
+async def quem_sou_eu(semestre: Annotated[str | None, Field(description=SEMESTRE)] = None) -> dict[str, Any]:
     """Verifica se a conexão com o Moodle está ativa e mostra o aluno, o site, a URL e a versão do Moodle. Útil para diagnosticar conexão ("estou conectado? em qual Moodle?")."""
-    info = await nucleo.chamar("core_webservice_get_site_info")
+    info = await nucleo.chamar("core_webservice_get_site_info", semestre=semestre)
     return nao_confiavel.resposta(
         nao_confiavel.item(
             {
@@ -50,8 +59,22 @@ async def quem_sou_eu() -> dict[str, Any]:
     )
 
 
+@mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))
+def usar_semestre(
+    semestre: Annotated[str, Field(description="Semestre a usar (ex.: '2026.1', 'anterior' ou 'atual').")],
+) -> dict[str, Any]:
+    """Troca o semestre consultado por todas as tools até o servidor reiniciar (instituições com um Moodle por semestre).
+
+    Use quando a conversa inteira for sobre outro semestre; para uma consulta só, passe `semestre` na tool.
+    Não chama o Moodle: cada semestre tem login próprio, feito na primeira tool que precisar dele.
+    """
+    url = nucleo.usar_semestre(semestre)
+    partes = urlsplit(url)
+    return {"moodle": f"{partes.hostname}{partes.path}"}
+
+
 @mcp.tool()
-async def entrar(ctx: Context) -> dict[str, Any]:
+async def entrar(ctx: Context, semestre: Annotated[str | None, Field(description=SEMESTRE)] = None) -> dict[str, Any]:
     """Faz login no Moodle: troca de conta ou renova um token expirado ou revogado.
 
     Não é preciso chamar antes das outras tools: sem login, a primeira tool já abre o login.
@@ -59,8 +82,9 @@ async def entrar(ctx: Context) -> dict[str, Any]:
     (colar o link) são só no terminal: nesses casos a tool devolve o comando para o aluno rodar.
     Pode levar alguns minutos (o aluno está fazendo o login).
     """
-    resultado = await nucleo.entrar(login.InteracaoMCP(ctx))
-    resultado["moodle"] = urlsplit(nucleo.cliente().base_url).hostname
+    resultado = await nucleo.entrar(login.InteracaoMCP(ctx), semestre=semestre)
+    partes = urlsplit(nucleo.cliente(semestre).base_url)
+    resultado["moodle"] = f"{partes.hostname}{partes.path}"
     if not resultado["token_no_chaveiro"]:
         resultado["aviso"] = (
             "Chaveiro do sistema indisponível: o token vale só até o servidor reiniciar, depois será preciso entrar de novo."

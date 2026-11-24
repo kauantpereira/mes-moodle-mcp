@@ -42,7 +42,8 @@ class InteracaoTerminal:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="moodle-mcp", description="Login do Moodle MCP pelo terminal.")
     parser.add_argument("comando", choices=["entrar", "sair"])
-    parser.add_argument("--url", help="endereço do Moodle (padrão: variável MOODLE_URL)")
+    parser.add_argument("--url", help="endereço do Moodle (padrão: variável MOODLE_URL ou o Moodle da instituição)")
+    parser.add_argument("--semestre", help="semestre, em instituições com um Moodle por semestre (padrão: o atual)")
     parser.add_argument(
         "--manual", action="store_true",
         help="login manual: abre o link do fluxo do app no seu navegador e cola o moodlemobile://token=... aqui",
@@ -51,11 +52,12 @@ def main(argv: list[str]) -> int:
     if args.url:
         os.environ["MOODLE_URL"] = args.url
     try:
-        url = nucleo._url()
+        url = nucleo.url_do_moodle(args.semestre)
         if args.comando == "sair":
             print("Token apagado do chaveiro." if chaveiro.apagar(url) else "Nenhum token guardado para este Moodle.")
             return 0
-        resultado = asyncio.run(nucleo.entrar(InteracaoTerminal(), manual=args.manual))
+        print(f"Moodle: {url}", file=sys.stderr)
+        resultado = asyncio.run(nucleo.entrar(InteracaoTerminal(), manual=args.manual, semestre=args.semestre))
     except ToolError as exc:
         print(f"Erro: {exc}", file=sys.stderr)
         return 1

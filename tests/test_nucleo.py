@@ -6,7 +6,7 @@ import httpx
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from moodle_mcp import chaveiro, login, nucleo
+from moodle_mcp import chaveiro, login, nucleo, perfis
 from moodle_mcp.client import MoodleClient
 from moodle_mcp.perfis import GENERICO, Perfil
 
@@ -24,10 +24,11 @@ def limpar(monkeypatch):
 
 def com_resposta(monkeypatch, handler):
     c = MoodleClient("https://moodle.exemplo.edu", TOKEN, transport=httpx.MockTransport(handler))
-    monkeypatch.setattr(nucleo, "_cliente", c)
+    nucleo._usar_cliente(c)
 
 
-def test_sem_url_configurada():
+def test_sem_url_configurada(monkeypatch):
+    monkeypatch.setattr(perfis, "PERFIS", ())  # sem perfil padrão (ex.: perfil ufmg revertido)
     with pytest.raises(ToolError, match="MOODLE_URL"):
         nucleo.cliente()
 
@@ -208,7 +209,7 @@ def test_token_recusado_nao_e_guardado(monkeypatch, moodle):
         asyncio.run(nucleo.entrar(object()))  # type: ignore[arg-type]
     assert "token-recusado-999" not in str(exc.value)
     assert chaveiro.ler(BASE) is None
-    assert nucleo._cliente is None
+    assert nucleo._clientes == {}
 
 
 def test_falha_de_login_vira_toolerror(monkeypatch, moodle):
