@@ -315,3 +315,62 @@ def test_perfil_ufmg_carrega_em_qualquer_ordem_de_importacao(primeiro):
     )
     saida = subprocess.run([sys.executable, "-c", codigo], capture_output=True, text=True)
     assert saida.returncode == 0 and "não carregou" not in saida.stderr, saida.stderr
+
+
+# ---------- um Moodle por semestre (ADR-0017) ----------
+
+
+@pytest.fixture
+def em(monkeypatch):
+    """Fixa a data de hoje do perfil."""
+    from datetime import date
+
+    from moodle_mcp.perfis import ufmg
+
+    def fixar(ano, mes, dia=15):
+        monkeypatch.setattr(ufmg, "hoje", lambda: date(ano, mes, dia))
+        return ufmg
+
+    return fixar
+
+
+@pytest.mark.parametrize(("mes", "codigo"), [(1, "20261"), (6, "20261"), (7, "20262"), (12, "20262")])
+def test_semestre_atual_pela_data(em, mes, codigo):
+    assert em(2026, mes).url_do_semestre(None) == f"https://virtual.ufmg.br/{codigo}"
+
+
+@pytest.mark.parametrize(
+    ("pedido", "codigo"),
+    [("2026.1", "20261"), ("20251", "20251"), ("2025/2", "20252"), (" 2025-2 ", "20252"), ("Atual", "20262"), ("anterior", "20261"), ("", "20262")],
+)
+def test_formatos_de_semestre(em, pedido, codigo):
+    assert em(2026, 11).url_do_semestre(pedido) == f"https://virtual.ufmg.br/{codigo}"
+
+
+def test_anterior_ao_primeiro_semestre_e_o_segundo_do_ano_passado(em):
+    assert em(2026, 3).url_do_semestre("anterior") == "https://virtual.ufmg.br/20252"
+
+
+@pytest.mark.parametrize("pedido", ["2026.3", "primeiro", "26.1"])
+def test_semestre_invalido(em, pedido):
+    with pytest.raises(ValueError, match="2026.1"):
+        em(2026, 11).url_do_semestre(pedido)
+
+
+def test_sem_moodle_url_vale_o_semestre_atual_da_ufmg(em, monkeypatch):
+    em(2026, 11)
+    monkeypatch.delenv("MOODLE_URL", raising=False)
+    nucleo._reiniciar()
+    assert perfis.padrao().nome == "ufmg"
+    assert nucleo.url_do_moodle() == BASE
+    assert nucleo.url_do_moodle("anterior") == "https://virtual.ufmg.br/20261"
+
+
+def test_reverter_o_perfil_volta_a_pedir_o_endereco(monkeypatch):
+    """Critério do ADR-0009: sem o perfil ufmg, nada quebra; o núcleo só pede MOODLE_URL."""
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    monkeypatch.delenv("MOODLE_URL", raising=False)
+    monkeypatch.setattr(perfis, "PERFIS", tuple(p for p in perfis.carregados() if p.nome != "ufmg"))
+    with pytest.raises(ToolError, match="MOODLE_URL"):
+        nucleo.url_do_moodle()
