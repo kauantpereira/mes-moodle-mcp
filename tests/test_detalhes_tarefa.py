@@ -46,8 +46,8 @@ def tarefa(**alteracoes: Any) -> dict[str, Any]:
         "configs": [
             {
                 "plugin": "file",
-                "subtype": "assignsubmission_file",
-                "name": "filetypes",
+                "subtype": "assignsubmission",
+                "name": "filetypeslist",
                 "value": ".pdf,.odt",
             }
         ],
@@ -63,12 +63,6 @@ def configurar_chamar(monkeypatch, userid: int = USERID, dados: Any | None = Non
     if dados is None:
         dados = {"courses": [{"id": COURSEID, "assignments": [tarefa()]}]}
     chamadas: list[tuple[str, dict[str, Any]]] = []
-
-    class ClienteFake:
-        async def userid(self):
-            return userid
-
-    monkeypatch.setattr(nucleo, "cliente", lambda semestre=None: ClienteFake())
 
     async def chamar(wsfunction: str, **params: Any) -> Any:
         chamadas.append((wsfunction, params))
@@ -141,53 +135,10 @@ def test_instrucao_hostil_visivel_permanece_confinada_em_nao_confiavel_com_aviso
     assert resultado["aviso"] == f"{AVISO} {AVISO_IA}"
 
 
-def test_repassa_semestre_ao_cliente_e_a_chamada_moodle(monkeypatch):
-    semestres_cliente: list[str | None] = []
-    chamadas: list[tuple[str, dict[str, Any]]] = []
-
-    class ClienteFake:
-        async def userid(self):
-            return USERID
-
-    def cliente(semestre=None):
-        semestres_cliente.append(semestre)
-        return ClienteFake()
-
-    async def chamar(wsfunction: str, **params: Any) -> Any:
-        chamadas.append((wsfunction, params))
-        return {"courses": [{"id": COURSEID, "assignments": [tarefa()]}]}
-
-    monkeypatch.setattr(nucleo, "cliente", cliente)
-    monkeypatch.setattr(nucleo, "chamar", chamar)
-
+def test_repassa_semestre_a_chamada_moodle(monkeypatch):
+    chamadas = configurar_chamar(monkeypatch)
     rodar(server.detalhes_da_tarefa(**ids(), semestre="2026.1"))
-
-    assert semestres_cliente == ["2026.1"]
-    assert chamadas == [
-        ("mod_assign_get_assignments", {"semestre": "2026.1", "courseids": [COURSEID]})
-    ]
-
-
-def test_falha_ao_obter_usuario_autenticado_nao_consulta_tarefa(monkeypatch):
-    chamadas: list[str] = []
-
-    class ClienteSemIdentidade:
-        async def userid(self):
-            raise RuntimeError("detalhe interno sensível")
-
-    monkeypatch.setattr(nucleo, "cliente", lambda semestre=None: ClienteSemIdentidade())
-
-    async def chamar(wsfunction: str, **params: Any) -> Any:
-        chamadas.append(wsfunction)
-        return {"courses": [{"id": COURSEID, "assignments": [tarefa()]}]}
-
-    monkeypatch.setattr(nucleo, "chamar", chamar)
-
-    with pytest.raises(ToolError, match="Não foi possível confirmar o aluno autenticado") as exc:
-        consultar(monkeypatch, **ids(), semestre="2026.1")
-
-    assert "detalhe interno sensível" not in str(exc.value)
-    assert "mod_assign_get_assignments" not in chamadas
+    assert chamadas == [("mod_assign_get_assignments", {"semestre": "2026.1", "courseids": [COURSEID]})]
 
 
 @pytest.mark.parametrize("campo,valor", [("courseid", -1), ("assignmentid", True), ("assignmentid", "34")])
@@ -263,7 +214,14 @@ def test_extrai_somente_configuracao_de_tipo_de_arquivo(monkeypatch):
                 {
                     "id": COURSEID,
                     "assignments": [
-                        tarefa(configs=[{"name": "maxsubmissions", "value": "3"}, {"name": "filetypes", "value": ".pdf"}])
+                        tarefa(
+                            configs=[
+                                {"plugin": "file", "subtype": "assignsubmission", "name": "maxfilesubmissions", "value": "3"},
+                                {"plugin": "file", "subtype": "assignsubmission", "name": "filetypeslist", "value": ".pdf"},
+                                # padrão do administrador, não é a config da tarefa
+                                {"plugin": "file", "subtype": "assignsubmission", "name": "filetypes", "value": ".zip"},
+                            ]
+                        )
                     ],
                 }
             ]
@@ -294,12 +252,10 @@ def test_cliente_real_envia_apenas_funcoes_de_leitura_e_curso(monkeypatch):
     monkeypatch.setattr(nucleo, "_transporte", httpx.MockTransport(responder))
     rodar(server.detalhes_da_tarefa(courseid=COURSEID, assignmentid=ASSIGNMENTID))
 
-    assert [pedido.url.params["wsfunction"] for pedido in pedidos] == [
-        "core_webservice_get_site_info",
-        "mod_assign_get_assignments",
-    ]
-    assert "wstoken" not in str(pedidos[1].url)
-    corpo = parse_qs(pedidos[1].content.decode())
+    # Uma chamada só: o userid não é necessário (o Moodle filtra pelo token).
+    assert [pedido.url.params["wsfunction"] for pedido in pedidos] == ["mod_assign_get_assignments"]
+    assert "wstoken" not in str(pedidos[0].url)
+    corpo = parse_qs(pedidos[0].content.decode())
     assert corpo["courseids[0]"] == [str(COURSEID)]
     assert "userid" not in corpo
 
@@ -310,3 +266,28 @@ def test_payload_sintetico_tipico_da_tool_fica_abaixo_de_2000_tokens(monkeypatch
     serializado = json.dumps(resultado, ensure_ascii=False, separators=(",", ":"))
     tokens_estimados = (len(serializado.encode("utf-8")) + 3) // 4
     assert tokens_estimados < 2000
+
+
+def test_sem_token_abre_o_login_como_as_outras_tools(monkeypatch):
+    """Login sob demanda (ADR-0016): a primeira tool sem token abre o login e continua."""
+    from moodle_mcp import perfis
+    from moodle_mcp.perfis import Perfil
+
+    monkeypatch.delenv("MOODLE_TOKEN")
+    logins: list[str] = []
+
+    async def entrar(base_url, interacao):
+        logins.append(base_url)
+        return TOKEN
+
+    monkeypatch.setattr(perfis, "PERFIS", (Perfil(nome="teste", hosts=frozenset({"moodle.exemplo.edu"}), login=entrar),))
+
+    def responder(request: httpx.Request) -> httpx.Response:
+        if request.url.params.get("wsfunction") == "core_webservice_get_site_info":
+            return httpx.Response(200, json={"userid": USERID})
+        return httpx.Response(200, json={"courses": [{"id": COURSEID, "assignments": [tarefa()]}]})
+
+    monkeypatch.setattr(nucleo, "_transporte", httpx.MockTransport(responder))
+    resultado = rodar(server.detalhes_da_tarefa(courseid=COURSEID, assignmentid=ASSIGNMENTID))
+    assert logins == [BASE]
+    assert resultado["dados"][0]["nao_confiavel"]["tipos_arquivo_aceitos"] == ".pdf,.odt"
