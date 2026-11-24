@@ -52,10 +52,37 @@ def test_cliente_unico_por_processo(monkeypatch):
 
 
 def test_token_expirado_vira_dica_de_login(monkeypatch):
-    com_resposta(monkeypatch, lambda r: httpx.Response(200, json={"errorcode": "invalidtoken", "message": "Token inválido"}))
-    with pytest.raises(ToolError, match="login de novo") as exc:
+    com_resposta(
+        monkeypatch,
+        lambda r: httpx.Response(200, json={"errorcode": "invalidtoken", "message": "Token inválido"}),
+    )
+    with pytest.raises(ToolError, match="token expirou ou foi revogado") as exc:
         asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
-    assert TOKEN not in str(exc.value)
+    mensagem = str(exc.value)
+    assert "entrar" in mensagem
+    assert "MOODLE_TOKEN" in mensagem
+    assert TOKEN not in mensagem
+    assert "https://moodle.exemplo.edu" not in mensagem
+    assert "Token inválido" not in mensagem
+
+
+def test_outro_errorcode_mantem_mensagem_generica(monkeypatch):
+    com_resposta(
+        monkeypatch,
+        lambda r: httpx.Response(
+            200,
+            json={"errorcode": "accessexception", "message": "detalhe interno secreto"},
+        ),
+    )
+    with pytest.raises(ToolError) as exc:
+        asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
+    mensagem = str(exc.value)
+    assert mensagem == "O Moodle recusou core_webservice_get_site_info."
+    assert "entrar" not in mensagem
+    assert "MOODLE_TOKEN" not in mensagem
+    assert TOKEN not in mensagem
+    assert "https://moodle.exemplo.edu" not in mensagem
+    assert "detalhe interno secreto" not in mensagem
 
 
 def test_funcao_de_escrita_vira_toolerror(monkeypatch):

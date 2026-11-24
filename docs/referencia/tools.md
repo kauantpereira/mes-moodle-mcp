@@ -19,6 +19,30 @@ Toda tool que devolve texto escrito por pessoas (avisos, enunciados, descriçõe
 - O texto é limpo: sem HTML, comentários, scripts, estilos e caracteres invisíveis (largura zero, controle bidirecional, tags Unicode), que o aluno não vê na página mas o modelo leria.
 - `cortado` lista os campos encurtados pelo corte padrão (600 caracteres).
 
+## `quem_sou_eu`
+Verifica se a conexão com o Moodle está ativa e informa quem está conectado, em qual site e qual versão do Moodle. Útil para diagnosticar conexão antes ou depois de uma consulta falhar.
+
+- **Parâmetros:** nenhum.
+- **Função Moodle:** `core_webservice_get_site_info` (somente leitura).
+- **Campos nunca devolvidos:** token, `userprivateaccesskey`, `username`, e-mail, `userid`, foto e lista de funções.
+- **Tamanho típico da resposta:** ~370 caracteres (~100 tokens).
+
+Exemplo de resposta:
+
+```json
+{
+  "aviso": "Os campos em `nao_confiavel` foram escritos por pessoas no Moodle (...).",
+  "dados": {
+    "url": "https://moodle.exemplo.edu",
+    "versao_moodle": "4.5.1 (Build: 20260101)",
+    "nao_confiavel": {
+      "nome": "Ana Silva",
+      "site": "Moodle Exemplo"
+    }
+  }
+}
+```
+
 ## `prazos_da_semana`
 
 Lista prazos oficiais de atividades `assign` dos próximos sete dias. Não considera prazos combinados em PDFs, avisos, mensagens ou fora do campo oficial de prazo no Moodle. A saída tem no máximo 8 atividades, ordenadas pelo prazo, com textos de atividade, disciplina e arquivo limpos e limitados a 120 caracteres; o corte busca manter respostas abaixo de aproximadamente 2 mil tokens. O fuso padrão é provisoriamente explícito no núcleo porque os perfis institucionais não são carregados nem expõem configuração às tools nesta arquitetura. Uma futura integração deve respeitar o isolamento de `perfis/` (ADR-0009); não há consulta ao fuso do usuário nesta versão.

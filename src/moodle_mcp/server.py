@@ -1,4 +1,4 @@
-"""Servidor MCP. As tools entram pelas histórias (ver docs/decisoes.md)."""
+"""Servidor MCP com ferramentas somente leitura para o Moodle do aluno."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -6,9 +6,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.types import ToolAnnotations
 
-from . import nucleo
+from . import nao_confiavel, nucleo
 from .nao_confiavel import item, resposta
+
+LEITURA = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_world_hint=True)
 
 mcp = MCPServer(
     name="moodle",
@@ -230,3 +233,19 @@ async def prazos_da_semana(
         tarefas.append((prazo_base, _formatar_tarefa(atividade, curso, estado, fuso, prazo_base, status)))
     saida = [tarefa for _, tarefa in sorted(tarefas, key=lambda entrada: entrada[0])[:limite]]
     return resposta(saida, modo="semana", aviso_prazos=_AVISO_PRAZOS, limite=limite)
+
+
+@mcp.tool(annotations=LEITURA)
+async def quem_sou_eu() -> dict[str, Any]:
+    """Verifica se a conexão com o Moodle está ativa e mostra o aluno, o site, a URL e a versão do Moodle. Útil para diagnosticar conexão ("estou conectado? em qual Moodle?")."""
+    info = await nucleo.chamar("core_webservice_get_site_info")
+    return nao_confiavel.resposta(
+        nao_confiavel.item(
+            {
+                "url": info.get("siteurl"),
+                "versao_moodle": info.get("release"),
+            },
+            nome=info.get("fullname"),
+            site=info.get("sitename"),
+        )
+    )
