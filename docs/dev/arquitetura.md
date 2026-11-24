@@ -25,7 +25,4 @@ agente (Claude Code / Codex / Gemini CLI)
 - `perfis/__init__.py`: contrato `Perfil` (hosts, fuso, janelas de manutenção, login próprio no contrato de `login.py`) e `perfil_para(base_url)`. Cada instituição é um módulo `perfis/<inst>.py` com `PERFIL = Perfil(...)`, descoberto sozinho; sem módulo (ou com o PR revertido), vale o `GENERICO`. O núcleo nunca importa um perfil pelo nome (ADR-0009).
 - `perfis/ufmg.py`: host `virtual.ufmg.br`, fuso `America/Sao_Paulo`, janela de backup 01h30–06h00 (ADR-0005) e login pelo navegador (SSO minhaUFMG). Reverter o PR do perfil apaga também `navegador.py` e a dependência do Playwright; o Moodle da UFMG passa ao login genérico (senha ou manual, pelo terminal).
 
-## Perfis (`perfis/`)
-- `perfis/__init__.py`: contrato `Perfil` (hosts, fuso, janelas de manutenção, login próprio) e `perfil_para(base_url)`. Cada instituição é um módulo `perfis/<inst>.py` com `PERFIL = Perfil(...)`, descoberto sozinho; sem módulo (ou com o PR revertido), vale o `GENERICO`. O núcleo nunca importa um perfil pelo nome (ADR-0009).
-
 Decisões: ver [adr/](adr/).
