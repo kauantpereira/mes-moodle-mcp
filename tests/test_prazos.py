@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
@@ -84,7 +85,7 @@ def test_nosubmissions_mantem_prazo_sem_chamar_status(monkeypatch):
     resultado = executar(server.prazos_da_semana())
     assert resultado["dados"][0]["status_envio"] == "sem_entrega_pelo_moodle"
     assert resultado["dados"][0]["entrega_pelo_moodle"] is False
-    assert resultado["dados"][0]["prazo"] == datetime.fromtimestamp(AGORA + 100, UTC).isoformat(timespec="minutes")
+    assert resultado["dados"][0]["prazo"] == datetime.fromtimestamp(AGORA + 100, UTC).astimezone(ZoneInfo("America/Sao_Paulo")).isoformat(timespec="minutes")
     assert not any(nome == "mod_assign_get_submission_status" for nome, _ in chamadas)
 
 
@@ -155,6 +156,51 @@ def test_limite_de_itens_e_texto(monkeypatch):
     assert len(resultado["dados"][0]["nao_confiavel"]["atividade"]) <= 121
     assert len(str(resultado)) < 8000
     assert resultado["limite"] == 8
+
+
+def test_fuso_padrao_preserva_data_hora_e_offset_sem_parametro(monkeypatch):
+    prazo = int(datetime(2026, 11, 25, 23, 59, tzinfo=ZoneInfo("America/Sao_Paulo")).timestamp())
+    instalar(monkeypatch, dados(atividade(1, "Entrega", prazo)))
+    resultado = executar(server.prazos_da_semana(nome_tarefa="Entrega"))
+    assert resultado["dados"][0]["prazo"] == "2026-11-25T23:59-03:00"
+
+
+def test_padrao_do_fuso_no_esquema_mcp_corresponde_ao_padrao_da_execucao():
+    ferramentas = executar(server.mcp.list_tools())
+    schema = next(f.input_schema for f in ferramentas if f.name == "prazos_da_semana")
+    assert schema["properties"]["fuso_horario"]["default"] == "America/Sao_Paulo"
+    assert schema["properties"]["limite"]["default"] == 8
+
+
+def test_fuso_explicito_sobrescreve_padrao(monkeypatch):
+    prazo = int(datetime(2026, 11, 25, 23, 59, tzinfo=ZoneInfo("America/Sao_Paulo")).timestamp())
+    instalar(monkeypatch, dados(atividade(1, "Entrega", prazo)))
+    resultado = executar(server.prazos_da_semana(nome_tarefa="Entrega", fuso_horario="UTC"))
+    assert resultado["dados"][0]["prazo"] == "2026-11-26T02:59+00:00"
+
+
+def test_consulta_especifica_usa_prazo_prorrogado_sem_alterar_dados(monkeypatch):
+    prazo_base = AGORA + 100
+    prazo_extensao = AGORA + 500
+    assignments = dados(atividade(1, "Prorrogada", prazo_base))
+    instalar(monkeypatch, assignments, {1: {"lastattempt": {
+        "extensionduedate": prazo_extensao,
+        "submission": {"status": "draft"},
+    }}})
+    resultado = executar(server.prazos_da_semana(nome_tarefa="Prorrogada"))
+    assert resultado["dados"][0]["prazo"] == datetime.fromtimestamp(prazo_extensao, UTC).astimezone(ZoneInfo("America/Sao_Paulo")).isoformat(timespec="minutes")
+    assert assignments["courses"][0]["assignments"][0]["duedate"] == prazo_base
+
+
+def test_limita_chamadas_de_status_e_marca_restantes_nao_verificadas(monkeypatch):
+    atividades = [atividade(i, f"Tarefa {i}", AGORA + i) for i in range(1, 17)]
+    statuses = {i: envio("submitted") for i in range(1, 9)}
+    chamadas = instalar(monkeypatch, dados(*atividades), statuses)
+    resultado = executar(server.prazos_da_semana())
+    verificacoes = [c for c in chamadas if c[0] == "mod_assign_get_submission_status"]
+    assert len(verificacoes) == 15
+    assert len(resultado["dados"]) == 8
+    assert [t["status_envio"] for t in resultado["dados"]] == ["sem_submissao"] * 7 + ["nao_verificado"]
 
 
 def test_consulta_especifica_enviada_fora_da_janela_com_multiplos_arquivos(monkeypatch):

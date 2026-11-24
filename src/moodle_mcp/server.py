@@ -27,6 +27,8 @@ _AVISO_PRAZOS = (
 )
 _LIMITE_MAXIMO = 8
 _LIMITE_TEXTO = 120
+_LIMITE_CHAMADAS_STATUS = 15
+_FUSO_PADRAO = "America/Sao_Paulo"
 
 
 def _data(timestamp: Any, fuso: ZoneInfo) -> str | None:
@@ -85,30 +87,30 @@ def _submissoes(dados: Any) -> list[dict[str, Any]]:
     return saida
 
 
-def _status(status: Any) -> tuple[str, str]:
-    """Retorna rótulo seguro e detalhe de timestamp sem confundir rascunho com envio."""
+def _status(status: Any) -> str:
+    """Retorna rótulo seguro sem confundir rascunho com envio."""
     if not isinstance(status, dict):
-        return "nao_verificado", ""
+        return "nao_verificado"
     tentativa = status.get("lastattempt")
     if not isinstance(tentativa, dict):
-        return "nao_verificado", ""
+        return "nao_verificado"
     submissao = _submissao_da_tentativa(tentativa)
     if not isinstance(submissao, dict):
         if "submission" not in tentativa and "teamsubmission" not in tentativa:
-            return "sem_submissao", ""
-        return "nao_verificado", ""
+            return "sem_submissao"
+        return "nao_verificado"
     if "status" not in submissao:
-        return "nao_verificado", ""
+        return "nao_verificado"
     estado = submissao["status"]
     if estado == "submitted":
-        return "enviada", "timemodified"
+        return "enviada"
     if estado == "draft":
-        return "rascunho", "timemodified"
+        return "rascunho"
     if estado == "reopened":
-        return "reaberta", "timemodified"
+        return "reaberta"
     if estado == "new":
-        return "sem_submissao", ""
-    return "nao_verificado", ""
+        return "sem_submissao"
+    return "nao_verificado"
 
 
 def _formatar_tarefa(
@@ -139,24 +141,22 @@ def _formatar_tarefa(
     description=(
         "Lista atividades com prazo nos próximos sete dias, excluindo as já enviadas; "
         "com nome_tarefa, consulta o estado, arquivos e horário de uma tarefa específica. "
-        "Use fuso_horario IANA para formatar datas (padrão UTC)."
+        "Use fuso_horario IANA para formatar datas (padrão America/Sao_Paulo). "
+        "Verifica no máximo 15 status de submissão por execução."
     ),
 )
 async def prazos_da_semana(
     nome_tarefa: str | None = None,
-    limite: int = 10,
-    fuso_horario: str = "UTC",
+    limite: int = 8,
+    fuso_horario: str = _FUSO_PADRAO,
 ) -> dict[str, Any]:
     """Lista prazos da semana ou consulta o envio de uma tarefa pelo nome."""
     try:
         fuso = ZoneInfo(fuso_horario)
     except (ZoneInfoNotFoundError, ValueError) as exc:
         raise ToolError("Fuso horário inválido; use um nome IANA, como America/Sao_Paulo.") from exc
-    try:
-        agora = datetime.now(UTC)
-        cursos_e_tarefas = await nucleo.chamar("mod_assign_get_assignments")
-    except ToolError:
-        raise
+    agora = datetime.now(UTC)
+    cursos_e_tarefas = await nucleo.chamar("mod_assign_get_assignments")
 
     if not isinstance(cursos_e_tarefas, dict) or not isinstance(cursos_e_tarefas.get("courses"), list):
         return resposta([], aviso_prazos=_AVISO_PRAZOS)
@@ -182,10 +182,15 @@ async def prazos_da_semana(
             return resposta([_formatar_tarefa(atividade, curso, "sem_entrega_pelo_moodle", fuso, atividade.get("duedate"))], modo="consulta_especifica", aviso_prazos=_AVISO_PRAZOS)
         try:
             status = await nucleo.chamar("mod_assign_get_submission_status", assignid=atividade["id"])
-            estado, _ = _status(status)
+            estado = _status(status)
         except ToolError:
             status, estado = None, "nao_verificado"
-        return resposta([_formatar_tarefa(atividade, curso, estado, fuso, atividade.get("duedate"), status)], modo="consulta_especifica", aviso_prazos=_AVISO_PRAZOS)
+        prazo = atividade.get("duedate")
+        tentativa = status.get("lastattempt") if isinstance(status, dict) else None
+        extensao = tentativa.get("extensionduedate") if isinstance(tentativa, dict) else None
+        if isinstance(extensao, (int, float)) and not isinstance(extensao, bool) and extensao > 0:
+            prazo = extensao
+        return resposta([_formatar_tarefa(atividade, curso, estado, fuso, prazo, status)], modo="consulta_especifica", aviso_prazos=_AVISO_PRAZOS)
 
     limite = max(1, min(limite, _LIMITE_MAXIMO))
     inicio = int(agora.timestamp())
@@ -199,18 +204,25 @@ async def prazos_da_semana(
         # Janela de lookback curta permite considerar extensão individual de tarefas cujo prazo-base acabou recentemente.
         if inicio - 7 * 86400 <= prazo <= fim:
             candidatas.append((prazo, curso, atividade))
+    chamadas_status = 0
     for prazo_base, curso, atividade in sorted(candidatas, key=lambda entrada: entrada[0]):
         status = None
         if atividade.get("nosubmissions") not in (1, True, "1"):
-            try:
-                status = await nucleo.chamar("mod_assign_get_submission_status", assignid=atividade["id"])
-                estado, _ = _status(status)
+            if chamadas_status < _LIMITE_CHAMADAS_STATUS:
+                try:
+                    status = await nucleo.chamar("mod_assign_get_submission_status", assignid=atividade["id"])
+                    chamadas_status += 1
+                    estado = _status(status)
+                except ToolError:
+                    chamadas_status += 1
+                    estado = "nao_verificado"
+            else:
+                estado = "nao_verificado"
+            if status is not None:
                 tentativa = status.get("lastattempt") if isinstance(status, dict) else None
                 extensao = tentativa.get("extensionduedate") if isinstance(tentativa, dict) else None
                 if isinstance(extensao, (int, float)) and not isinstance(extensao, bool) and extensao > 0:
                     prazo_base = extensao
-            except ToolError:
-                estado = "nao_verificado"
         else:
             estado = "sem_entrega_pelo_moodle"
         if not inicio <= prazo_base <= fim or estado == "enviada":
