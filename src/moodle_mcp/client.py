@@ -9,7 +9,8 @@ Garantias deste módulo:
 - token só trafega por HTTPS (HTTP apenas para um Moodle local, em localhost);
 - downloads só do host do próprio Moodle, inclusive nos redirecionamentos;
 - chamadas e downloads passam pelo limite de chamadas (ADR-0005), antes da rede;
-- dados que mudam pouco vêm do cache curto (ADR-0005), sem rede e sem contar no limite.
+- dados que mudam pouco vêm do cache curto (ADR-0005), sem rede e sem contar no limite;
+- na janela de manutenção do perfil da instituição, nada sai para a rede (o cache ainda vale).
 """
 
 from typing import Any
@@ -19,6 +20,8 @@ import httpx
 
 from .cache import CacheCurto, chave
 from .limite import Limitador
+from .manutencao import Manutencao
+from .perfis import perfil_para
 
 TIMEOUT = httpx.Timeout(30.0)
 HOSTS_LOCAIS = {"localhost", "127.0.0.1", "::1"}
@@ -88,6 +91,7 @@ class MoodleClient:
         transport: httpx.AsyncBaseTransport | None = None,
         limitador: Limitador | None = None,
         cache: CacheCurto | None = None,
+        manutencao: Manutencao | None = None,
     ):
         if not token:
             raise ValueError("token vazio")
@@ -99,6 +103,7 @@ class MoodleClient:
         self._site_info: dict[str, Any] | None = None
         self.limitador = limitador or Limitador()
         self.cache = CacheCurto() if cache is None else cache
+        self.manutencao = Manutencao(perfil_para(self.base_url)) if manutencao is None else manutencao
 
     def __repr__(self) -> str:  # nunca expor o token
         return f"MoodleClient({self.base_url!r})"
@@ -112,6 +117,7 @@ class MoodleClient:
             achou, dados = self.cache.obter(k)
             if achou:
                 return dados
+        self.manutencao.checar()
         self.limitador.registrar()
         resp = await self._http.post(
             f"{self.base_url}/webservice/rest/server.php",
@@ -137,6 +143,7 @@ class MoodleClient:
 
         Só aceita URLs do mesmo host do Moodle (inclusive nos redirecionamentos).
         Levanta ValueError (mensagem sem URL) se o host for outro ou o arquivo passar do limite.
+        Como `call()`, levanta LimiteAtingido ou EmManutencao antes da rede.
         """
         base = urlsplit(self.base_url)
         url = fileurl
@@ -145,6 +152,7 @@ class MoodleClient:
                 partes = urlsplit(url)
                 if partes.scheme != base.scheme or partes.netloc != base.netloc or partes.username or partes.password:
                     raise ValueError("o arquivo está fora do host do Moodle")
+                self.manutencao.checar()
                 self.limitador.registrar()
                 async with self._http.stream("GET", url, params={"token": self._token}, follow_redirects=False) as resp:
                     if resp.is_redirect:

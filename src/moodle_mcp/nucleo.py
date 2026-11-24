@@ -15,6 +15,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .client import FuncaoNaoPermitida, MoodleClient, MoodleError
 from .limite import LimiteAtingido
+from .manutencao import EmManutencao
 
 
 def _token_do_ambiente(base_url: str) -> str | None:
@@ -65,6 +66,11 @@ async def chamar(wsfunction: str, **params: Any) -> Any:
         raise ToolError(
             f"Limite de {exc.maximo} chamadas ao Moodle a cada {_duracao(exc.janela_s)} atingido "
             f"(proteção da infraestrutura da instituição). Tente de novo em {_duracao(exc.espera_s)}."
+        ) from None
+    except EmManutencao as exc:
+        raise ToolError(
+            f"O Moodle está em manutenção das {exc.inicio:%H:%M} às {exc.fim:%H:%M} (horário {exc.fuso}). "
+            f"Tente de novo a partir das {exc.fim:%H:%M}."
         ) from None
     except MoodleError as exc:
         dica = " Faça login de novo." if exc.errorcode == "invalidtoken" else ""

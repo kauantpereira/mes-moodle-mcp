@@ -7,6 +7,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - Template de PR: `Closes #N` no lugar de `Fecha #N`, reversão como escolha única e itens não aplicáveis marcados como `N/A`.
 
 ### Adicionado
+- Janela de manutenção definida pelo perfil da instituição: nessa faixa de horário o Moodle não é chamado e a mensagem diz a partir de quando tentar; o que já está em cache continua disponível (ADR-0005).
 - Cache curto (5 min) da lista de disciplinas e do conteúdo das disciplinas: menos chamadas ao Moodle, sem contar no limite (ADR-0005).
 - Contador e limite de chamadas ao Moodle (60/min e 600/h), com mensagem de quando tentar de novo (ADR-0005).
 - Marcação de texto do Moodle como dado não confiável (`aviso` + campo `nao_confiavel`), com limpeza de HTML oculto e caracteres invisíveis.
