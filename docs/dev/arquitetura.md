@@ -23,6 +23,6 @@ agente (Claude Code / Codex / Gemini CLI)
 
 ## Perfis (`perfis/`)
 - `perfis/__init__.py`: contrato `Perfil` (hosts, fuso, janelas de manutenção, login próprio no contrato de `login.py`) e `perfil_para(base_url)`. Cada instituição é um módulo `perfis/<inst>.py` com `PERFIL = Perfil(...)`, descoberto sozinho; sem módulo (ou com o PR revertido), vale o `GENERICO`. O núcleo nunca importa um perfil pelo nome (ADR-0009).
-- `perfis/ufmg.py`: host `virtual.ufmg.br`, fuso `America/Sao_Paulo`, janela de backup 01h30–06h00 (ADR-0005) e login pelo navegador (SSO minhaUFMG). Reverter o PR do perfil apaga também `navegador.py` e a dependência do Playwright; o Moodle da UFMG passa ao login genérico (senha ou manual, pelo terminal).
+- `perfis/ufmg.py`: host `virtual.ufmg.br`, fuso `America/Sao_Paulo`, janela de backup 01h30–06h00 (ADR-0005) e login pelo navegador (SSO minhaUFMG). O perfil entrou na `main` junto com o limite de chamadas, no squash do #92 (o PR próprio, #102, foi mergeado na branch de baixo), então não há um commit só dele para `git revert`. Para reverter, apague `perfis/ufmg.py`, `navegador.py` e `tests/test_perfil_ufmg.py` e tire o `playwright` do `pyproject.toml` (`uv lock` atualiza o `uv.lock`); o Moodle da UFMG passa ao login genérico (senha ou manual, pelo terminal). A lista completa do que o perfil trouxe está nos arquivos do #102.
 
 Decisões: ver [adr/](adr/).
