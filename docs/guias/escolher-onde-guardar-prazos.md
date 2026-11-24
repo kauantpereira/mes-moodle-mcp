@@ -1,3 +1,3 @@
 # Escolher onde guardar os prazos
 
-> Guia. Como trocar o destino (Google Agenda, Outlook, Notion, Todoist, Obsidian, arquivo .ics ou nenhum). Ver [conectores](../referencia/conectores.md).
+> Guia. Como escolher o destino da categoria `~~calendário` ou `~~tarefas`, ou usar as opções universais quando não houver conector. Consulte [conectores](../referencia/conectores.md) para ver as alternativas e os formatos disponíveis.
