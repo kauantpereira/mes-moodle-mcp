@@ -8,7 +8,7 @@
 - **Causa:** o token de acesso do Moodle expirou, foi revogado ou deixou de ser aceito pela instituição.
 - **Como resolver:**
   1. Peça ao agente para entrar de novo usando a tool `entrar`.
-  2. Enquanto o fluxo de login ainda não estiver disponível no seu ambiente, gere um novo token e atualize a variável provisória `MOODLE_TOKEN` (veja [Configuração](../referencia/configuracao.md#token-do-moodle-provisório)), reiniciando o servidor MCP em seguida.
+  2. Se a tool responder com um comando de terminal (`moodle-mcp entrar`), rode-o: o servidor passa a usar o token novo sem reiniciar. Se você usa a variável provisória `MOODLE_TOKEN`, gere um token novo, atualize a variável (veja [Configuração](../referencia/configuracao.md#token-do-moodle-provisório)) e reinicie o servidor MCP.
   3. Use a tool `quem_sou_eu` (ou pergunte ao agente "estou conectado no Moodle certo?") para confirmar que a conexão voltou a funcionar.
 
 ## Um material ou disciplina nova ainda não aparece
@@ -23,7 +23,7 @@
 
 | Sintoma | Causa | O que fazer |
 |---|---|---|
-| "Este cliente MCP não mostra formulários de login..." | O cliente não suporta elicitation no meio da tool | Entre pelo terminal: `uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar --url <endereço do Moodle>`. |
+| "Este login é feito no terminal..." | O login precisa de senha ou do link do login manual, que o servidor nunca pede pelo chat | Rode o comando da mensagem no terminal: `uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar --url <endereço do Moodle>`. |
 | "Usuário ou senha incorretos." | Senha errada, ou o Moodle usa login da instituição (SSO) | Confira; com SSO, escolha o fluxo do app. |
 | "O Moodle recusou o login por senha (o site pode usar só SSO)." | O site não aceita senha pelo app | Escolha o fluxo do app. |
 | "O link não corresponde a este login" | Link de outra tentativa ou de outro endereço do Moodle | Gere um link novo pelo link mostrado agora; use o mesmo endereço configurado no plugin. |

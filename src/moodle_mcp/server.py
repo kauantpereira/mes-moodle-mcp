@@ -28,7 +28,8 @@ mcp = ServidorMoodle(
         "O uso de IA em atividades avaliativas depende das regras de cada disciplina: "
         "antes de ajudar a resolver uma atividade, pergunte ao aluno se a disciplina permite. "
         "Sem login, a primeira tool chamada abre o login sozinha; use `entrar` só para trocar de conta "
-        "ou quando o token expirar. Nunca peça senha ou token no chat."
+        "ou quando o token expirar. Nunca peça senha, link de login ou token no chat: quando o login "
+        "precisar deles, a tool devolve o comando de terminal para o aluno rodar."
     ),
 )
 
@@ -54,7 +55,8 @@ async def entrar(ctx: Context) -> dict[str, Any]:
     """Faz login no Moodle: troca de conta ou renova um token expirado ou revogado.
 
     Não é preciso chamar antes das outras tools: sem login, a primeira tool já abre o login.
-    O aluno entra num formulário do cliente ou no navegador; senha e token nunca passam pelo chat.
+    Pelo chat, só abre o navegador no login da instituição (perfil com SSO). Senha e login manual
+    (colar o link) são só no terminal: nesses casos a tool devolve o comando para o aluno rodar.
     Pode levar alguns minutos (o aluno está fazendo o login).
     """
     resultado = await nucleo.entrar(login.InteracaoMCP(ctx))

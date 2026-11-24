@@ -12,13 +12,13 @@ Não há opção de login: na primeira pergunta sem token, o servidor abre o log
 
 ### Pelo terminal
 
-Para clientes MCP que não mostram formulário (elicitation):
+Senha e login manual são só no terminal (o servidor não pergunta nada pelo chat):
 
 ```bash
 uvx --from git+https://github.com/kauantpereira/mes-moodle-mcp moodle-mcp entrar --url https://moodle.exemplo.edu
 ```
 
-`moodle-mcp sair --url ...` apaga o token do chaveiro. Sem `--url`, vale a variável `MOODLE_URL`. Use o mesmo endereço configurado no plugin.
+`--manual` pula o navegador automático: mostra o link do fluxo do app, você faz o login no seu navegador e cola o `moodlemobile://token=...` (não aparece na tela). `moodle-mcp sair --url ...` apaga o token do chaveiro. Sem `--url`, vale a variável `MOODLE_URL`. Use o mesmo endereço configurado no plugin.
 
 ### `MOODLE_TOKEN` (provisório, desenvolvimento)
 

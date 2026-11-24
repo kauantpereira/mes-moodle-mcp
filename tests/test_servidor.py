@@ -33,7 +33,7 @@ def test_tool_entrar_registrada():
     assert tools["entrar"].input_schema.get("properties", {}) == {}
 
 
-def test_entrar_sem_formulario_indica_o_terminal(monkeypatch):
+def test_entrar_generico_indica_o_terminal(monkeypatch):
     monkeypatch.setattr(nucleo, "perfil_para", lambda url: GENERICO)
     with pytest.raises(ToolError, match="moodle-mcp entrar"):
         asyncio.run(mcp.call_tool("entrar", {}))
@@ -83,48 +83,45 @@ def test_cli_entrar_por_senha(monkeypatch, capsys, chaveiro_falso):
     assert chaveiro_falso.dados == {}
 
 
-def _cliente_mcp(modo, respostas):
+def test_cli_entrar_manual(monkeypatch, capsys, chaveiro_falso):
+    """`--manual`: não usa o login do perfil; o link é lido sem eco e só o token vai ao chaveiro."""
+    import base64
+    import hashlib
+
+    from moodle_mcp import login
+
+    async def perfil_nao_usado(base_url, interacao):
+        raise AssertionError("--manual não deve abrir o login do perfil")
+
+    monkeypatch.setattr(nucleo, "perfil_para", lambda url: GENERICO.__class__(nome="x", login=perfil_nao_usado))
+    monkeypatch.setattr(login, "novo_passport", lambda: "passport-ficticio")
+    assinatura = hashlib.md5((BASE + "passport-ficticio").encode()).hexdigest()
+    link = "moodlemobile://token=" + base64.b64encode(f"{assinatura}:::{TOKEN}".encode()).decode()
+    monkeypatch.setattr("builtins.input", lambda prompt="": pytest.fail("o link não pode ser lido com eco"))
+    monkeypatch.setattr(cli.getpass, "getpass", lambda prompt="": link)
+    monkeypatch.delenv("MOODLE_URL")
+    assert cli.main(["entrar", "--url", BASE, "--manual"]) == 0
+    saida = capsys.readouterr()
+    assert TOKEN not in saida.out + saida.err and link not in saida.out + saida.err
+    assert chaveiro_falso.dados == {("moodle-mcp", BASE): TOKEN}
+
+
+@pytest.mark.parametrize("modo", ["legacy", "auto"])
+def test_cliente_mcp_nunca_recebe_formulario(monkeypatch, modo):
+    """Cliente MCP real em memória, com e sem pedidos no meio da tool: o servidor nunca pede
+    senha nem link (elicitation); responde com o comando de terminal."""
     from mcp.client.client import Client
-    from mcp_types import ElicitResult
 
     pedidos = []
 
     async def formulario(ctx, params):
-        campos = set(params.requested_schema["properties"])
-        pedidos.append(campos)
-        return ElicitResult(action="accept", content=respostas[frozenset(campos)])
-
-    return Client(mcp, elicitation_callback=formulario, mode=modo), pedidos
-
-
-def test_entrar_por_formulario_de_ponta_a_ponta(monkeypatch, chaveiro_falso):
-    """Cliente MCP real em memória (protocolo com pedidos no meio da tool): senha só no formulário."""
-    from moodle_mcp import login
+        pedidos.append(params)
+        raise AssertionError("o servidor não deve pedir formulário")
 
     monkeypatch.setattr(nucleo, "perfil_para", lambda url: GENERICO)
-    monkeypatch.setattr(login, "transporte", httpx.MockTransport(lambda r: httpx.Response(200, json={"token": TOKEN})))
-    cliente, pedidos = _cliente_mcp(
-        "legacy",
-        {frozenset({"metodo"}): {"metodo": "senha"}, frozenset({"usuario", "senha"}): {"usuario": "aluno", "senha": "senha-ficticia-456"}},
-    )
 
     async def rodar():
-        async with cliente as c:
-            return await c.call_tool("entrar", {})
-
-    resultado = asyncio.run(rodar())
-    assert not resultado.is_error and resultado.structured_content["conectado"] is True
-    assert pedidos == [{"metodo"}, {"usuario", "senha"}]
-    assert "senha-ficticia-456" not in str(resultado) and TOKEN not in str(resultado)
-    assert chaveiro_falso.dados == {("moodle-mcp", BASE): TOKEN}
-
-
-def test_protocolo_sem_pedidos_no_meio_da_tool_indica_o_terminal(monkeypatch):
-    monkeypatch.setattr(nucleo, "perfil_para", lambda url: GENERICO)
-    cliente, pedidos = _cliente_mcp("auto", {})
-
-    async def rodar():
-        async with cliente as c:
+        async with Client(mcp, elicitation_callback=formulario, mode=modo) as c:
             return await c.call_tool("entrar", {})
 
     resultado = asyncio.run(rodar())

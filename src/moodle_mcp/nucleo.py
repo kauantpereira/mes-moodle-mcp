@@ -7,6 +7,7 @@ O núcleo recebe só URL + token (ADR-0009):
 - Sem token, a primeira tool chamada faz o login e continua a resposta (`chamar`); a tool
   `entrar` refaz o login (troca de conta ou token expirado). O método vem do perfil da
   instituição (`perfil_para(url).login`) ou do login genérico (`login.login_generico`).
+  Pelo chat, só o login que abre o navegador funciona; senha e link colado ficam no terminal.
 """
 
 import asyncio
@@ -32,8 +33,9 @@ def _token_guardado(base_url: str) -> str | None:
 
 obter_token: Callable[[str], str | None] = _token_guardado
 _cliente: MoodleClient | None = None
+_token_atual: str | None = None  # token do `_cliente`, para notar um login feito no terminal
 _trava: asyncio.Lock | None = None
-# Contexto MCP da tool em execução (posto pelo servidor), para o login sob demanda pedir formulário.
+# Contexto MCP da tool em execução (posto pelo servidor), para o login sob demanda mandar avisos de progresso.
 _contexto: ContextVar[Any] = ContextVar("moodle_mcp_contexto", default=None)
 # Só para testes: transporte simulado dos clientes criados pelo login.
 _transporte: httpx.AsyncBaseTransport | None = None
@@ -65,13 +67,13 @@ def _novo_cliente(url: str, token: str) -> MoodleClient:
 
 
 def cliente() -> MoodleClient:
-    global _cliente
+    global _cliente, _token_atual
     if _cliente is None:
         url = _url()
         token = obter_token(url)
         if not token:
             raise ToolError("Sem token do Moodle. Use a tool `entrar` para fazer login.")
-        _cliente = _novo_cliente(url, token)
+        _cliente, _token_atual = _novo_cliente(url, token), token
     return _cliente
 
 
@@ -80,9 +82,18 @@ def metodo_de_login(base_url: str) -> login.Login:
     return perfil_para(base_url).login or login.login_generico
 
 
-async def entrar(interacao: login.Interacao | None = None) -> dict[str, Any]:
-    """Faz o login, confere o token no Moodle e guarda no chaveiro. Troca o cliente atual."""
-    global _cliente
+async def _trocar(novo: MoodleClient, token: str) -> None:
+    global _cliente, _token_atual
+    antigo, _cliente, _token_atual = _cliente, novo, token
+    if antigo is not None:
+        await antigo.aclose()
+
+
+async def entrar(interacao: login.Interacao | None = None, manual: bool = False) -> dict[str, Any]:
+    """Faz o login, confere o token no Moodle e guarda no chaveiro. Troca o cliente atual.
+
+    `manual`: força o fluxo do app com o link colado (`moodle-mcp entrar --manual`).
+    """
     url = _url()
     if os.environ.get("MOODLE_TOKEN"):
         raise ToolError("MOODLE_TOKEN está definida no ambiente e tem prioridade: remova-a para entrar pelo login.")
@@ -91,7 +102,8 @@ async def entrar(interacao: login.Interacao | None = None) -> dict[str, Any]:
     if interacao is None:
         interacao = login.InteracaoMCP(_contexto.get())
     try:
-        token = await metodo_de_login(url)(url, interacao)
+        metodo = login.login_manual if manual else metodo_de_login(url)
+        token = await metodo(url, interacao)
     except login.LoginFalhou as exc:
         raise ToolError(str(exc)) from None
     novo = _novo_cliente(url, token)
@@ -104,16 +116,21 @@ async def entrar(interacao: login.Interacao | None = None) -> dict[str, Any]:
         await novo.aclose()
         raise ToolError("O Moodle não aceitou o token do login. Tente entrar de novo.") from None
     guardado = chaveiro.salvar(url, token)
-    antigo, _cliente = _cliente, novo
-    if antigo is not None:
-        await antigo.aclose()
+    await _trocar(novo, token)
     return {"conectado": True, "token_no_chaveiro": guardado}
 
 
 async def _cliente_com_login() -> MoodleClient:
     """O cliente atual; sem token, faz o login primeiro (uma vez, mesmo com tools em paralelo)."""
     global _trava
-    if _cliente is not None or obter_token(_url()):
+    if _cliente is not None:
+        if _token_atual is not None and not os.environ.get("MOODLE_TOKEN"):
+            guardado = chaveiro.ler(_cliente.base_url)
+            if guardado and guardado != _token_atual:
+                # Login feito no terminal (`moodle-mcp entrar`) com o servidor rodando: usa o token novo.
+                await _trocar(_novo_cliente(_cliente.base_url, guardado), guardado)
+        return _cliente
+    if obter_token(_url()):
         return cliente()
     if _trava is None:
         _trava = asyncio.Lock()
@@ -125,8 +142,9 @@ async def _cliente_com_login() -> MoodleClient:
 
 def _reiniciar() -> None:
     """Só para testes: esquece o cliente atual."""
-    global _cliente, _trava
+    global _cliente, _token_atual, _trava
     _cliente = None
+    _token_atual = None
     _trava = None
 
 
@@ -158,8 +176,7 @@ async def chamar(wsfunction: str, **params: Any) -> Any:
         if exc.errorcode == "invalidtoken":
             dica = (
                 " O token expirou ou foi revogado. Entre de novo usando a tool `entrar` "
-                "(ou, enquanto o login não estiver configurado, atualize a variável provisória MOODLE_TOKEN "
-                "e reinicie o servidor)."
+                "(se usa a variável provisória MOODLE_TOKEN, atualize-a e reinicie o servidor)."
             )
         else:
             dica = ""

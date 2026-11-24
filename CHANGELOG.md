@@ -13,8 +13,8 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - Janela de manutenção definida pelo perfil da instituição: nessa faixa de horário o Moodle não é chamado e a mensagem diz a partir de quando tentar; o que já está em cache continua disponível (ADR-0005).
 - Cache curto (5 min) da lista de disciplinas e do conteúdo das disciplinas: menos chamadas ao Moodle, sem contar no limite (ADR-0005).
 - Login sob demanda (ADR-0016): a primeira tool sem token abre o login e continua; tool `entrar` para trocar de conta ou renovar token expirado; token no chaveiro do sistema (`MOODLE_TOKEN` continua com prioridade).
-- Login genérico por senha (`login/token.php`, Moodle sem SSO) ou pelo fluxo do app com o link colado (login manual), por formulário do cliente MCP; senha nunca guardada nem registrada.
-- Comandos de terminal `moodle-mcp entrar` e `moodle-mcp sair`, para clientes MCP sem formulário.
+- Login genérico por senha (`login/token.php`, Moodle sem SSO) ou pelo fluxo do app com o link colado (login manual), só no terminal; senha nunca guardada nem registrada, e nada é pedido pelo chat.
+- Comandos de terminal `moodle-mcp entrar` (`--manual` para colar o link do fluxo do app) e `moodle-mcp sair`.
 - Contador e limite de chamadas ao Moodle (60/min e 600/h), com mensagem de quando tentar de novo (ADR-0005).
 - Marcação de texto do Moodle como dado não confiável (`aviso` + campo `nao_confiavel`), com limpeza de HTML oculto e caracteres invisíveis.
 - Núcleo: cliente da API REST do Moodle (URL + token), com lista de funções só de leitura e proteção do token.

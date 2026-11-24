@@ -7,7 +7,6 @@ from urllib.parse import parse_qs, urlsplit
 
 import httpx
 import pytest
-from mcp.server.elicitation import render_elicitation_schema
 
 from moodle_mcp import login
 from moodle_mcp.login import LoginFalhou
@@ -180,7 +179,7 @@ def test_generico_cancelado(moodle, interacao):
     assert moodle == []
 
 
-def test_sem_formulario_indica_o_terminal():
+def test_generico_sem_terminal_indica_o_comando():
     with pytest.raises(LoginFalhou, match="moodle-mcp entrar"):
         asyncio.run(login.login_generico(BASE, InteracaoFalsa(pode_perguntar=False)))
 
@@ -188,14 +187,15 @@ def test_sem_formulario_indica_o_terminal():
 # ---------- interação MCP ----------
 
 
-def test_formularios_seguem_o_formato_de_elicitation():
-    for modelo in (login._Metodo, login._Credenciais, login._Link):
-        render_elicitation_schema(modelo)  # levanta TypeError se o cliente não puder mostrar
-
-
-def test_interacao_mcp_sem_contexto_nao_pergunta():
-    interacao = login.InteracaoMCP(None)
+@pytest.mark.parametrize("ctx", [None, object()])
+def test_interacao_mcp_nunca_pergunta(ctx):
+    """Senha e link nunca são pedidos pelo cliente MCP: sempre o comando de terminal."""
+    interacao = login.InteracaoMCP(ctx)
     assert interacao.pode_perguntar is False
-    asyncio.run(interacao.avisar("ok"))  # sem contexto, avisar não falha
-    with pytest.raises(LoginFalhou, match="elicitation"):
+    asyncio.run(interacao.avisar("ok"))  # avisar não falha nem sem contexto de progresso
+    for pedir in (interacao.escolher_metodo, interacao.pedir_credenciais):
+        with pytest.raises(LoginFalhou, match="moodle-mcp entrar") as exc:
+            asyncio.run(pedir("x"))
+        assert "--manual" not in str(exc.value)
+    with pytest.raises(LoginFalhou, match="moodle-mcp entrar .*--manual"):
         asyncio.run(interacao.pedir_link("x"))

@@ -151,6 +151,17 @@ def test_token_vem_do_chaveiro(monkeypatch, moodle, chaveiro_falso):
     assert moodle == [TOKEN]
 
 
+def test_login_feito_no_terminal_vale_sem_reiniciar(monkeypatch, moodle, chaveiro_falso):
+    """Token expirado + `moodle-mcp entrar` no terminal: o servidor rodando passa ao token novo."""
+    chaveiro.salvar(BASE, "token-antigo-111")
+    asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
+    limitador = nucleo.cliente().limitador
+    chaveiro.salvar(BASE, "token-novo-222")  # o que o terminal faz
+    asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
+    assert moodle == ["token-antigo-111", "token-novo-222"]
+    assert nucleo.cliente().limitador is limitador  # o limite de chamadas continua contando
+
+
 def test_moodle_token_tem_prioridade(monkeypatch, moodle):
     chaveiro.salvar(BASE, "token-do-chaveiro-1")
     monkeypatch.setenv("MOODLE_TOKEN", TOKEN)
@@ -250,7 +261,7 @@ def test_sem_chaveiro_token_fica_na_memoria(monkeypatch, moodle):
     assert moodle == [TOKEN, TOKEN]
 
 
-def test_generico_sem_formulario_explica_o_terminal(monkeypatch, moodle):
+def test_generico_pelo_chat_explica_o_terminal(monkeypatch, moodle):
     monkeypatch.setattr(nucleo, "perfil_para", lambda url: GENERICO)
     with pytest.raises(ToolError, match="moodle-mcp entrar"):
         asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
