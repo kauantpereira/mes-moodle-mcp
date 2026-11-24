@@ -35,7 +35,7 @@ Refs #12
 
 ## Pull requests
 - **Título** no mesmo formato de commit (`feat(tools): adiciona novidades_desde`): ele vira a mensagem do squash.
-- **Corpo** pelo [template](../../.github/pull_request_template.md): descrição, `Fecha #N` (palavra-chave de fechamento do GitHub), ADRs, como testar, plano de reversão e checklist.
+- **Corpo** pelo [template](../../.github/pull_request_template.md): descrição, `Closes #N` (palavra-chave de fechamento do GitHub: só funciona em inglês; `Fecha #N` não fecha a issue), ADRs, como testar, plano de reversão (uma opção) e checklist (caixinha vazia = pendente; item que não se aplica vira `N/A` com o motivo).
 - Pequeno e focado: se passar de ~400 linhas alteradas, quebrar.
 - **Revisão:** pelo menos 1 pessoa do grupo que não seja a autora. Quem revisa confere a [Definição de Pronto](../../CONTRIBUTING.md#definição-de-pronto) e as regras do projeto.
 - **Merge:** *squash and merge* (um commit por PR em `main`), e a branch é apagada depois.

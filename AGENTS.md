@@ -38,7 +38,7 @@ Só quando a pessoa pedir. Ler a issue "Coleta de histórias", `docs/dev/sugesto
 ## Commits e PRs
 - Branch `<tipo>/<issue>-<resumo>`; commits e título do PR em Conventional Commits (`feat(tools): adiciona novidades_desde`), em português, no imperativo.
 - Rodapé `Co-Authored-By:` do agente em todo commit feito com ajuda de IA.
-- PR pelo template, com `Fecha #N`; squash and merge. Detalhes: `docs/dev/fluxo-git.md`.
+- PR pelo template, com `Closes #N` (em inglês: `Fecha` não fecha a issue); squash and merge. Detalhes: `docs/dev/fluxo-git.md`.
 
 ## Ao terminar uma mudança
 - Testes e `claude plugin validate .` passam.
