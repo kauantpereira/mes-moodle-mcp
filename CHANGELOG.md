@@ -21,3 +21,6 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - Núcleo: cliente da API REST do Moodle (URL + token), com lista de funções só de leitura e proteção do token.
 - Esqueleto do monorepo: servidor MCP, 3 skills, manifestos para Claude Code, Codex e Gemini CLI.
 - Documentação do usuário (Diátaxis) e de desenvolvimento (ADRs, pesquisa, processo, fluxo git).
+
+### Corrigido
+- Login pelo navegador no Claude Desktop (Linux): o servidor acha a tela da sessão do aluno quando o app não repassa `DISPLAY`; antes, a tool dizia que não havia navegador.
