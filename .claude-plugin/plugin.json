@@ -7,12 +7,6 @@
   "repository": "https://github.com/kauantpereira/mes-moodle-mcp",
   "keywords": ["moodle", "mcp", "estudantes", "ufmg"],
   "userConfig": {
-    "moodle_url": {
-      "type": "string",
-      "title": "Endereço do Moodle",
-      "description": "URL do Moodle da sua instituição (ex.: https://moodle.exemplo.edu)",
-      "required": true
-    },
     "destino_calendario": {
       "type": "string",
       "title": "Onde manter prazos e mudanças",

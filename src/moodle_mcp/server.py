@@ -1,18 +1,24 @@
 """Servidor MCP com ferramentas somente leitura para o Moodle do aluno."""
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from pydantic import Field
 
 from . import login, nao_confiavel, nucleo
 from .nao_confiavel import item, resposta
 
 LEITURA = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_world_hint=True)
+
+SEMESTRE = (
+    "Semestre a consultar só nesta chamada (ex.: '2026.1'), em instituições com um Moodle por semestre. "
+    "Vazio: o semestre em uso (o atual, ou o escolhido com `usar_semestre`)."
+)
 
 def _valor_grade(item_grade: dict[str, Any], formatado: str, bruto: str) -> tuple[Any, str | None]:
     """Prefere a forma apresentada pelo Moodle, preservando escalas e notas por letra."""
@@ -108,7 +114,9 @@ mcp = ServidorMoodle(
         "antes de ajudar a resolver uma atividade, pergunte ao aluno se a disciplina permite. "
         "Sem login, a primeira tool chamada abre o login sozinha; use `entrar` só para trocar de conta "
         "ou quando o token expirar. Nunca peça senha, link de login ou token no chat: quando o login "
-        "precisar deles, a tool devolve o comando de terminal para o aluno rodar."
+        "precisar deles, a tool devolve o comando de terminal para o aluno rodar. "
+        "Em instituições com um Moodle por semestre, as tools usam o semestre atual: para consultar outro "
+        "uma vez, passe `semestre`; para uma conversa inteira sobre outro semestre, use `usar_semestre`."
     ),
 )
 
@@ -240,6 +248,7 @@ async def prazos_da_semana(
     nome_tarefa: str | None = None,
     limite: int = 8,
     fuso_horario: str = _FUSO_PADRAO,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
 ) -> dict[str, Any]:
     """Lista prazos da semana ou consulta o envio de uma tarefa pelo nome."""
     try:
@@ -247,7 +256,7 @@ async def prazos_da_semana(
     except (ZoneInfoNotFoundError, ValueError) as exc:
         raise ToolError("Fuso horário inválido; use um nome IANA, como America/Sao_Paulo.") from exc
     agora = datetime.now(UTC)
-    cursos_e_tarefas = await nucleo.chamar("mod_assign_get_assignments")
+    cursos_e_tarefas = await nucleo.chamar("mod_assign_get_assignments", semestre=semestre)
 
     if not isinstance(cursos_e_tarefas, dict) or not isinstance(cursos_e_tarefas.get("courses"), list):
         return resposta([], aviso_prazos=_AVISO_PRAZOS)
@@ -272,7 +281,7 @@ async def prazos_da_semana(
         if atividade.get("nosubmissions") in (1, True, "1"):
             return resposta([_formatar_tarefa(atividade, curso, "sem_entrega_pelo_moodle", fuso, atividade.get("duedate"))], modo="consulta_especifica", aviso_prazos=_AVISO_PRAZOS)
         try:
-            status = await nucleo.chamar("mod_assign_get_submission_status", assignid=atividade["id"])
+            status = await nucleo.chamar("mod_assign_get_submission_status", semestre=semestre, assignid=atividade["id"])
             estado = _status(status)
         except ToolError:
             status, estado = None, "nao_verificado"
@@ -301,7 +310,7 @@ async def prazos_da_semana(
         if atividade.get("nosubmissions") not in (1, True, "1"):
             if chamadas_status < _LIMITE_CHAMADAS_STATUS:
                 try:
-                    status = await nucleo.chamar("mod_assign_get_submission_status", assignid=atividade["id"])
+                    status = await nucleo.chamar("mod_assign_get_submission_status", semestre=semestre, assignid=atividade["id"])
                     chamadas_status += 1
                     estado = _status(status)
                 except ToolError:
@@ -323,10 +332,11 @@ async def prazos_da_semana(
     return resposta(saida, modo="semana", aviso_prazos=_AVISO_PRAZOS, limite=limite)
 
 
+
 @mcp.tool(annotations=LEITURA)
-async def quem_sou_eu() -> dict[str, Any]:
+async def quem_sou_eu(semestre: Annotated[str | None, Field(description=SEMESTRE)] = None) -> dict[str, Any]:
     """Verifica se a conexão com o Moodle está ativa e mostra o aluno, o site, a URL e a versão do Moodle. Útil para diagnosticar conexão ("estou conectado? em qual Moodle?")."""
-    info = await nucleo.chamar("core_webservice_get_site_info")
+    info = await nucleo.chamar("core_webservice_get_site_info", semestre=semestre)
     return nao_confiavel.resposta(
         nao_confiavel.item(
             {
@@ -340,14 +350,16 @@ async def quem_sou_eu() -> dict[str, Any]:
 
 
 @mcp.tool(annotations=LEITURA)
-async def notas_da_disciplina(courseid: int) -> dict[str, Any]:
+async def notas_da_disciplina(
+    courseid: int, semestre: Annotated[str | None, Field(description=SEMESTRE)] = None
+) -> dict[str, Any]:
     """Consulta as notas e o feedback visíveis ao aluno em uma disciplina (ID do curso no Moodle)."""
     if isinstance(courseid, bool) or not isinstance(courseid, int) or courseid <= 0:
         raise ToolError("Informe um identificador válido de disciplina do Moodle.")
 
     # Não usar userid=0: em Moodle, esse padrão pode representar todos os alunos.
     try:
-        userid = await nucleo.cliente().userid()
+        userid = await nucleo.cliente(semestre).userid()
     except ToolError:
         raise
     except Exception:
@@ -356,7 +368,7 @@ async def notas_da_disciplina(courseid: int) -> dict[str, Any]:
         raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.")
 
     dados = await nucleo.chamar(
-        "gradereport_user_get_grade_items", courseid=courseid, userid=userid
+        "gradereport_user_get_grade_items", semestre=semestre, courseid=courseid, userid=userid
     )
     if not isinstance(dados, dict) or not isinstance(dados.get("usergrades"), list):
         raise ToolError("O Moodle retornou uma resposta de notas inválida.")
@@ -381,8 +393,22 @@ async def notas_da_disciplina(courseid: int) -> dict[str, Any]:
     return nao_confiavel.resposta(notas)
 
 
+@mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))
+def usar_semestre(
+    semestre: Annotated[str, Field(description="Semestre a usar (ex.: '2026.1', 'anterior' ou 'atual').")],
+) -> dict[str, Any]:
+    """Troca o semestre consultado por todas as tools até o servidor reiniciar (instituições com um Moodle por semestre).
+
+    Use quando a conversa inteira for sobre outro semestre; para uma consulta só, passe `semestre` na tool.
+    Não chama o Moodle: cada semestre tem login próprio, feito na primeira tool que precisar dele.
+    """
+    url = nucleo.usar_semestre(semestre)
+    partes = urlsplit(url)
+    return {"moodle": f"{partes.hostname}{partes.path}"}
+
+
 @mcp.tool()
-async def entrar(ctx: Context) -> dict[str, Any]:
+async def entrar(ctx: Context, semestre: Annotated[str | None, Field(description=SEMESTRE)] = None) -> dict[str, Any]:
     """Faz login no Moodle: troca de conta ou renova um token expirado ou revogado.
 
     Não é preciso chamar antes das outras tools: sem login, a primeira tool já abre o login.
@@ -390,8 +416,9 @@ async def entrar(ctx: Context) -> dict[str, Any]:
     (colar o link) são só no terminal: nesses casos a tool devolve o comando para o aluno rodar.
     Pode levar alguns minutos (o aluno está fazendo o login).
     """
-    resultado = await nucleo.entrar(login.InteracaoMCP(ctx))
-    resultado["moodle"] = urlsplit(nucleo.cliente().base_url).hostname
+    resultado = await nucleo.entrar(login.InteracaoMCP(ctx), semestre=semestre)
+    partes = urlsplit(nucleo.cliente(semestre).base_url)
+    resultado["moodle"] = f"{partes.hostname}{partes.path}"
     if not resultado["token_no_chaveiro"]:
         resultado["aviso"] = (
             "Chaveiro do sistema indisponível: o token vale só até o servidor reiniciar, depois será preciso entrar de novo."

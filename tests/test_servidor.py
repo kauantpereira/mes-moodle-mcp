@@ -30,7 +30,7 @@ def test_servidor_carrega():
 def test_tool_entrar_registrada():
     tools = {t.name: t for t in asyncio.run(mcp.list_tools())}
     assert "entrar" in tools
-    assert tools["entrar"].input_schema.get("properties", {}) == {}
+    assert set(tools["entrar"].input_schema.get("properties", {})) == {"semestre"}  # nada de senha ou token
 
 
 def test_entrar_generico_indica_o_terminal(monkeypatch):

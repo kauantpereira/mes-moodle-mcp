@@ -20,5 +20,6 @@ Formato: [MADR](https://adr.github.io/madr/) mínimo. Uma decisão por arquivo, 
 | [0014](0014-github-flow-conventional-commits-e-semver.md) | GitHub Flow, Conventional Commits e SemVer | aceita |
 | [0015](0015-fluxo-de-sugestoes-com-triagem-de-conformidade.md) | Coleta de histórias com triagem de conformidade | aceita |
 | [0016](0016-login-sob-demanda-com-chaveiro-e-captura-do-token-pelo-navegador.md) | Login sob demanda, token no chaveiro e captura do token pelo navegador | aceita |
+| [0017](0017-endereco-do-moodle-pelo-perfil-e-semestre-nas-tools.md) | Endereço do Moodle vindo do perfil e semestre escolhido pelas tools | aceita |
 
 Modelo para novas decisões: [template.md](template.md). Pesquisa que embasou as decisões: [../pesquisa.md](../pesquisa.md).

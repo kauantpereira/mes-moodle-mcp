@@ -120,7 +120,7 @@ def test_cliente_escolhe_o_perfil_pela_url():
 
 def test_toolerror_diz_ate_quando_sem_token_nem_url(monkeypatch):
     c, _ = montar(em_sp(3))
-    monkeypatch.setattr(nucleo, "_cliente", c)
+    nucleo._usar_cliente(c)
     with pytest.raises(ToolError) as exc:
         asyncio.run(nucleo.chamar("core_webservice_get_site_info"))
     msg = str(exc.value)
