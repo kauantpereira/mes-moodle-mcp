@@ -10,6 +10,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 ### Adicionado
 - Entrada sobre token expirado/inválido no guia de solução de problemas (`docs/guias/solucao-de-problemas.md`).
 - Tool `quem_sou_eu`: verifica a conexão e informa nome do aluno, site, URL e versão do Moodle (sem expor token ou dados sensíveis).
+- Contador e limite de chamadas ao Moodle (60/min e 600/h), com mensagem de quando tentar de novo (ADR-0005).
 - Marcação de texto do Moodle como dado não confiável (`aviso` + campo `nao_confiavel`), com limpeza de HTML oculto e caracteres invisíveis.
 - Núcleo: cliente da API REST do Moodle (URL + token), com lista de funções só de leitura e proteção do token.
 - Esqueleto do monorepo: servidor MCP, 3 skills, manifestos para Claude Code, Codex e Gemini CLI.

@@ -14,6 +14,7 @@ import httpx
 from mcp.server.mcpserver.exceptions import ToolError
 
 from .client import FuncaoNaoPermitida, MoodleClient, MoodleError
+from .limite import LimiteAtingido
 
 
 def _token_do_ambiente(base_url: str) -> str | None:
@@ -46,6 +47,13 @@ def _reiniciar() -> None:
     _cliente = None
 
 
+def _duracao(segundos: int) -> str:
+    if segundos < 60:
+        return f"{segundos} s"
+    minutos = -(-segundos // 60)
+    return f"{minutos} min"
+
+
 async def chamar(wsfunction: str, **params: Any) -> Any:
     """Chama uma função de leitura e devolve ToolError com mensagem útil (sem token nem debuginfo)."""
     c = cliente()
@@ -53,6 +61,11 @@ async def chamar(wsfunction: str, **params: Any) -> Any:
         return await c.call(wsfunction, **params)
     except FuncaoNaoPermitida as exc:
         raise ToolError(f"Função bloqueada pela regra de só leitura: {exc}.") from exc
+    except LimiteAtingido as exc:
+        raise ToolError(
+            f"Limite de {exc.maximo} chamadas ao Moodle a cada {_duracao(exc.janela_s)} atingido "
+            f"(proteção da infraestrutura da instituição). Tente de novo em {_duracao(exc.espera_s)}."
+        ) from None
     except MoodleError as exc:
         if exc.errorcode == "invalidtoken":
             dica = (
