@@ -128,6 +128,79 @@ _LIMITE_MAXIMO = 8
 _LIMITE_TEXTO = 120
 _LIMITE_CHAMADAS_STATUS = 15
 _FUSO_PADRAO = "America/Sao_Paulo"
+_TIPOS_ARQUIVO = {"filetypes", "accepted_file_types", "acceptedtypes"}
+
+
+def _configuracao_tipos_arquivo(configs: Any) -> str:
+    if not isinstance(configs, list):
+        return ""
+    for config in configs:
+        if isinstance(config, dict) and isinstance(config.get("name"), str):
+            if config["name"].casefold() in _TIPOS_ARQUIVO and isinstance(config.get("value"), str):
+                return config["value"]
+    return ""
+
+
+def _nomes_anexos(arquivos: Any) -> str:
+    if not isinstance(arquivos, list):
+        return ""
+    return ", ".join(
+        arquivo["filename"] for arquivo in arquivos
+        if isinstance(arquivo, dict) and isinstance(arquivo.get("filename"), str) and arquivo["filename"].strip()
+    )
+
+
+def _inteiro_ou_nulo(valor: Any) -> int | None:
+    return valor if isinstance(valor, int) and not isinstance(valor, bool) else None
+
+
+@mcp.tool(annotations=LEITURA)
+async def detalhes_da_tarefa(
+    courseid: int,
+    assignmentid: int,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
+) -> dict[str, Any]:
+    """Consulta enunciado, prazo, formatos aceitos e anexos de uma tarefa (IDs do Moodle)."""
+    if any(isinstance(valor, bool) or not isinstance(valor, int) or valor <= 0 for valor in (courseid, assignmentid)):
+        raise ToolError("Informe identificadores válidos de disciplina e tarefa do Moodle.")
+
+    try:
+        userid = await nucleo.cliente(semestre).userid()
+    except ToolError:
+        raise
+    except Exception:
+        raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.") from None
+    if isinstance(userid, bool) or not isinstance(userid, int) or userid <= 0:
+        raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.")
+
+    dados = await nucleo.chamar("mod_assign_get_assignments", semestre=semestre, courseids=[courseid])
+    if not isinstance(dados, dict) or not isinstance(dados.get("courses"), list):
+        raise ToolError("O Moodle retornou uma resposta inválida ao consultar a tarefa.")
+    tarefa = None
+    for curso in dados["courses"]:
+        if not isinstance(curso, dict) or curso.get("id") != courseid:
+            continue
+        assignments = curso.get("assignments")
+        if isinstance(assignments, list):
+            tarefa = next((a for a in assignments if isinstance(a, dict) and a.get("id") == assignmentid and a.get("course", courseid) == courseid), None)
+        break
+    if tarefa is None:
+        raise ToolError("Tarefa não encontrada na disciplina informada.")
+
+    metadados = {
+        "id": assignmentid,
+        "courseid": courseid,
+        "duedate": _inteiro_ou_nulo(tarefa.get("duedate")),
+        "cutoffdate": _inteiro_ou_nulo(tarefa.get("cutoffdate")),
+    }
+    registro = item(
+        metadados,
+        nome=tarefa.get("name") if isinstance(tarefa.get("name"), str) else "",
+        enunciado=tarefa.get("intro") if isinstance(tarefa.get("intro"), str) else "",
+        tipos_arquivo_aceitos=_configuracao_tipos_arquivo(tarefa.get("configs")),
+        anexos=_nomes_anexos(tarefa.get("introattachments")),
+    )
+    return nao_confiavel.resposta_avaliativa([registro])
 
 
 def _data(timestamp: Any, fuso: ZoneInfo) -> str | None:

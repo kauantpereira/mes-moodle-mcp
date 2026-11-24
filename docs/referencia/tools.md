@@ -75,6 +75,16 @@ Nomes dos itens, notas em formato textual (por exemplo, escalas) e feedback fica
 
 **Tamanho típico medido:** 1.920 caracteres (1.940 bytes UTF-8; estimativa aproximada de 485 tokens calculada como teto de bytes/4) para um payload sintético com 12 itens, cada um com nome, nota numérica e formatada, máximo, peso e feedback curto. A medição serializou a resposta efetivamente produzida pela ferramenta em JSON compacto (`ensure_ascii=False`); é uma estimativa de tokens, não contagem do tokenizer do modelo. Não há limite arbitrário de quantidade de itens.
 
+## `detalhes_da_tarefa`
+
+Consulta uma tarefa `assign` de uma disciplina do aluno autenticado pelo Moodle. Recebe `courseid` e `assignmentid` (obrigatórios, identificadores numéricos positivos) e `semestre` (opcional, ver [Semestre](#semestre)). A consulta usa `mod_assign_get_assignments` filtrado pelo curso e seleciona somente a tarefa solicitada; não envia `userid` nem consulta dados de outros alunos.
+
+Retorna os identificadores da tarefa e da disciplina, `duedate` e `cutoffdate` (timestamps Unix ou `null`), nome, enunciado, tipos de arquivo aceitos e nomes dos anexos de `introattachments`. Não baixa anexos nem devolve URLs, configurações completas, dados de submissão ou dados de outros alunos. Se a tarefa não estiver na disciplina informada, a tool retorna erro.
+
+Nome, enunciado, formatos e nomes de anexos ficam em `nao_confiavel`, com limpeza de HTML e corte padrão de 600 caracteres por campo. A resposta usa `nao_confiavel.resposta_avaliativa()`: `aviso` combina a proteção contra instruções vindas do Moodle com o lembrete de conferir a regra da disciplina antes de ajudar numa atividade avaliativa.
+
+**Tamanho típico medido:** abaixo de 2 mil tokens para uma resposta sintética com nome, enunciado curto, formatos aceitos, dois anexos e prazos. A medição serializa a resposta efetivamente produzida pela ferramenta em JSON compacto (`ensure_ascii=False`) e estima tokens pelo teto de bytes UTF-8 dividido por 4; não é contagem do tokenizer do modelo.
+
 ## `quem_sou_eu`
 Verifica se a conexão com o Moodle está ativa e informa quem está conectado, em qual site e qual versão do Moodle. Útil para diagnosticar conexão antes ou depois de uma consulta falhar.
 
