@@ -7,13 +7,21 @@ Garantias deste módulo:
 - só chama funções da lista FUNCOES_PERMITIDAS, todas de leitura (regra 1);
 - o token vai no corpo do POST, nunca na URL, e não aparece em mensagens de erro;
 - token só trafega por HTTPS (HTTP apenas para um Moodle local, em localhost);
-- downloads só do host do próprio Moodle, inclusive nos redirecionamentos.
+- downloads só do host do próprio Moodle, inclusive nos redirecionamentos;
+- chamadas e downloads passam pelo limite de chamadas (ADR-0005), antes da rede;
+- dados que mudam pouco vêm do cache curto (ADR-0005), sem rede e sem contar no limite;
+- na janela de manutenção do perfil da instituição, nada sai para a rede (o cache ainda vale).
 """
 
 from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
+
+from .cache import CacheCurto, chave
+from .limite import Limitador
+from .manutencao import Manutencao
+from .perfis import perfil_para
 
 TIMEOUT = httpx.Timeout(30.0)
 HOSTS_LOCAIS = {"localhost", "127.0.0.1", "::1"}
@@ -76,7 +84,15 @@ def _url_segura(url: str) -> bool:
 
 
 class MoodleClient:
-    def __init__(self, base_url: str, token: str, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(
+        self,
+        base_url: str,
+        token: str,
+        transport: httpx.AsyncBaseTransport | None = None,
+        limitador: Limitador | None = None,
+        cache: CacheCurto | None = None,
+        manutencao: Manutencao | None = None,
+    ):
         if not token:
             raise ValueError("token vazio")
         self.base_url = base_url.rstrip("/")
@@ -85,6 +101,9 @@ class MoodleClient:
         self._token = token
         self._http = httpx.AsyncClient(timeout=TIMEOUT, transport=transport)
         self._site_info: dict[str, Any] | None = None
+        self.limitador = limitador or Limitador()
+        self.cache = CacheCurto() if cache is None else cache
+        self.manutencao = Manutencao(perfil_para(self.base_url)) if manutencao is None else manutencao
 
     def __repr__(self) -> str:  # nunca expor o token
         return f"MoodleClient({self.base_url!r})"
@@ -92,14 +111,23 @@ class MoodleClient:
     async def call(self, wsfunction: str, **params: Any) -> Any:
         if wsfunction not in FUNCOES_PERMITIDAS:
             raise FuncaoNaoPermitida(f"{wsfunction} não está na lista de funções de leitura")
+        achatados = _achatar(params)
+        k = chave(wsfunction, achatados)
+        if self.cache.guarda(wsfunction):
+            achou, dados = self.cache.obter(k)
+            if achou:
+                return dados
+        self.manutencao.checar()
+        self.limitador.registrar()
         resp = await self._http.post(
             f"{self.base_url}/webservice/rest/server.php",
             params={"moodlewsrestformat": "json", "wsfunction": wsfunction},
-            data={"wstoken": self._token, **_achatar(params)},
+            data={"wstoken": self._token, **achatados},
         )
         resp.raise_for_status()
         dados = resp.json()
         _checar_erro(dados)
+        self.cache.salvar(k, dados)
         return dados
 
     async def site_info(self) -> dict[str, Any]:
@@ -115,6 +143,7 @@ class MoodleClient:
 
         Só aceita URLs do mesmo host do Moodle (inclusive nos redirecionamentos).
         Levanta ValueError (mensagem sem URL) se o host for outro ou o arquivo passar do limite.
+        Como `call()`, levanta LimiteAtingido ou EmManutencao antes da rede.
         """
         base = urlsplit(self.base_url)
         url = fileurl
@@ -123,6 +152,8 @@ class MoodleClient:
                 partes = urlsplit(url)
                 if partes.scheme != base.scheme or partes.netloc != base.netloc or partes.username or partes.password:
                     raise ValueError("o arquivo está fora do host do Moodle")
+                self.manutencao.checar()
+                self.limitador.registrar()
                 async with self._http.stream("GET", url, params={"token": self._token}, follow_redirects=False) as resp:
                     if resp.is_redirect:
                         url = str(resp.url.join(resp.headers.get("location", "")))
