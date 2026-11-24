@@ -4,9 +4,12 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 
 ## [Não lançado]
 ### Alterado
+- Mensagem de erro para `invalidtoken` em `nucleo.chamar` agora orienta como entrar de novo (tool `entrar` e alternativa provisória `MOODLE_TOKEN`).
 - Template de PR: `Closes #N` no lugar de `Fecha #N`, reversão como escolha única e itens não aplicáveis marcados como `N/A`.
 
 ### Adicionado
+- Entrada sobre token expirado/inválido no guia de solução de problemas (`docs/guias/solucao-de-problemas.md`).
+- Tool `quem_sou_eu`: verifica a conexão e informa nome do aluno, site, URL e versão do Moodle (sem expor token ou dados sensíveis).
 - Marcação de texto do Moodle como dado não confiável (`aviso` + campo `nao_confiavel`), com limpeza de HTML oculto e caracteres invisíveis.
 - Núcleo: cliente da API REST do Moodle (URL + token), com lista de funções só de leitura e proteção do token.
 - Esqueleto do monorepo: servidor MCP, 3 skills, manifestos para Claude Code, Codex e Gemini CLI.

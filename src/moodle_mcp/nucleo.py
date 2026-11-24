@@ -54,7 +54,14 @@ async def chamar(wsfunction: str, **params: Any) -> Any:
     except FuncaoNaoPermitida as exc:
         raise ToolError(f"Função bloqueada pela regra de só leitura: {exc}.") from exc
     except MoodleError as exc:
-        dica = " Faça login de novo." if exc.errorcode == "invalidtoken" else ""
+        if exc.errorcode == "invalidtoken":
+            dica = (
+                " O token expirou ou foi revogado. Entre de novo usando a tool `entrar` "
+                "(ou, enquanto o login não estiver configurado, atualize a variável provisória MOODLE_TOKEN "
+                "e reinicie o servidor)."
+            )
+        else:
+            dica = ""
         raise ToolError(f"O Moodle recusou {wsfunction}.{dica}") from None
     except httpx.HTTPError as exc:
         raise ToolError("Falha de conexão com o Moodle.") from None
