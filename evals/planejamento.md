@@ -20,7 +20,7 @@ Avalia se o agente monta uma proposta realista a partir dos prazos do próprio a
 
 **Contexto sintético**
 
-- Janela: próximos sete dias.
+- Janela sintética: segunda 30/11 a domingo 06/12/2026, com a resposta simulada em 29/11/2026 (próximos sete dias).
 - `~~calendário`: livre segunda 14h–16h, terça 9h–11h, quarta 14h–16h, quinta 9h–10h e sexta 14h–16h; demais horários ocupados.
 - Prazos do próprio aluno, retornados por `prazos_da_semana` (payload sintético; a atividade já enviada não aparece na listagem semanal):
 
