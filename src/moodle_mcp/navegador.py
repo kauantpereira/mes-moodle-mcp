@@ -2,8 +2,9 @@
 
 Genérico (só API padrão do Moodle), usado pelo login de perfis de instituição com SSO.
 Abre uma janela no `launch.php`, o aluno faz o login da instituição e o Moodle redireciona
-para `moodlemobile://token=...`: a rota intercepta essa resposta, a janela fecha sozinha e o
-token é conferido pela assinatura do `passport`. Nenhuma URL, cookie ou token é registrado.
+para `moodlemobile://token=...`: a rota das páginas segue os redirecionamentos ela mesma e
+intercepta essa resposta, a janela fecha sozinha e o token é conferido pela assinatura do
+`passport`. Nenhuma URL, cookie ou token é registrado.
 
 Ordem de navegador: Chrome instalado → Edge instalado → Chromium do Playwright (baixado uma
 vez, ~150 MB, com aviso) → login manual (o aluno cola o link no terminal: `moodle-mcp entrar --manual`).
@@ -17,6 +18,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 from . import login
 from .login import Interacao, LoginFalhou
@@ -127,18 +129,45 @@ def _procurar(texto: str | None, achado: dict[str, str]) -> bool:
     return bool(m)
 
 
-def _interceptar(achado: dict[str, str]) -> Callable[[Any], Any]:
+MAX_SALTOS = 10
+
+
+def _interceptar(achado: dict[str, str], requisicao: Any) -> Callable[[Any], Any]:
+    """Rota das páginas (documentos): segue os redirecionamentos aqui, sem o navegador.
+
+    O Playwright só chama a rota para o primeiro endereço de uma cadeia de redirecionamentos.
+    Depois do SSO, o provedor de identidade redireciona ao Moodle, que redireciona ao
+    `launch.php`, que redireciona a `moodlemobile://token=...`: se o navegador seguisse essa
+    cadeia, o último salto escaparia da rota e o Chrome ofereceria abrir o link em outro
+    programa (xdg-open), levando o token junto. Por isso a rota busca cada salto com
+    `max_redirects=0` (mesmos cookies da janela) e procura o token no Location e no HTML.
+    """
+
     async def rota(route: Any) -> None:
-        # Busca o launch.php sem seguir o redirecionamento: o token vem no Location ou numa
-        # página que tenta abrir moodlemobile:// por JavaScript.
+        if route.request.resource_type != "document":
+            await route.continue_()
+            return
         resp = await route.fetch(max_redirects=0)
-        encontrou = _procurar(resp.headers.get("location"), achado)
-        if not encontrou and "html" in resp.headers.get("content-type", ""):
-            encontrou = _procurar(await resp.text(), achado)
-        if encontrou:
-            await route.fulfill(status=200, content_type="text/html; charset=utf-8", body=_PAGINA_FIM)
-        else:
+        saltos = 0
+        while True:
+            if _procurar(resp.headers.get("location"), achado) or (
+                "html" in resp.headers.get("content-type", "") and _procurar(await resp.text(), achado)
+            ):
+                await route.fulfill(status=200, content_type="text/html; charset=utf-8", body=_PAGINA_FIM)
+                return
+            destino = resp.headers.get("location")
+            if not (300 <= resp.status < 400 and destino) or saltos >= MAX_SALTOS:
+                break
+            destino = urljoin(resp.url, destino)
+            if urlsplit(destino).scheme not in ("http", "https"):
+                break
+            resp = await requisicao.get(destino, max_redirects=0)
+            saltos += 1
+        if saltos == 0:
             await route.fulfill(response=resp)
+        else:
+            # A janela vai direto ao fim da cadeia (o navegador busca de novo só esta página).
+            await route.fulfill(status=302, headers={"location": resp.url})
 
     return rota
 
@@ -158,7 +187,7 @@ async def capturar_token(base_url: str, interacao: Interacao, tempo_s: int = TEM
             navegador = await _abrir(pw, interacao)
             try:
                 contexto = await navegador.new_context()
-                await contexto.route("**/admin/tool/mobile/launch.php*", _interceptar(achado))
+                await contexto.route("**/*", _interceptar(achado, contexto.request))
                 pagina = await contexto.new_page()
                 # Rede de segurança: o Chrome avisa no Console quando não consegue abrir moodlemobile://.
                 pagina.on("console", lambda msg: _procurar(msg.text, achado))

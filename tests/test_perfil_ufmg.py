@@ -41,16 +41,20 @@ class Interacao:
 
 
 class Resposta:
-    def __init__(self, headers, corpo=""):
-        self.headers, self._corpo = headers, corpo
+    def __init__(self, headers, corpo="", status=200, url=BASE + "/admin/tool/mobile/launch.php"):
+        self.headers, self._corpo, self.status, self.url = headers, corpo, status, url
 
     async def text(self):
         return self._corpo
 
 
 class Rota:
-    def __init__(self, resposta):
-        self.resposta, self.cumprida = resposta, None
+    def __init__(self, resposta, tipo="document"):
+        self.resposta, self.cumprida, self.seguiu = resposta, None, False
+        self.request = type("Pedido", (), {"resource_type": tipo})()
+
+    async def continue_(self):
+        self.seguiu = True
 
     async def fetch(self, max_redirects=None):
         assert max_redirects == 0
@@ -87,8 +91,10 @@ class Contexto:
     def __init__(self, nav):
         self.nav = nav
 
+    request = None  # APIRequestContext: os testes da cadeia de redirecionamentos usam um simulado
+
     async def route(self, padrao, handler):
-        assert "launch.php" in padrao
+        assert padrao == "**/*"
         self.nav.handler = handler
 
     async def new_page(self):
@@ -135,7 +141,7 @@ class Playwright:
 
 async def redireciona(pagina, passport):
     """O Moodle responde ao launch.php com Location: moodlemobile://token=..."""
-    pagina.nav.rota = Rota(Resposta({"location": link_do_app(BASE, passport)}))
+    pagina.nav.rota = Rota(Resposta({"location": link_do_app(BASE, passport)}, status=303))
     await pagina.nav.handler(pagina.nav.rota)
 
 
@@ -298,7 +304,7 @@ def test_pagina_sem_token_segue_normal(simular):
     """Respostas do launch.php sem token (ex.: tela de login) passam intactas ao navegador."""
     rota = Rota(Resposta({"content-type": "text/html"}, "<form>login</form>"))
     achado = {}
-    asyncio.run(navegador._interceptar(achado)(rota))
+    asyncio.run(navegador._interceptar(achado, Requisicao())(rota))
     assert achado == {} and rota.cumprida == {"response": rota.resposta}
 
 
@@ -374,3 +380,60 @@ def test_reverter_o_perfil_volta_a_pedir_o_endereco(monkeypatch):
     monkeypatch.setattr(perfis, "PERFIS", tuple(p for p in perfis.carregados() if p.nome != "ufmg"))
     with pytest.raises(ToolError, match="MOODLE_URL"):
         nucleo.url_do_moodle()
+
+
+# ---------- cadeia de redirecionamentos depois do SSO ----------
+
+
+class Requisicao:
+    """APIRequestContext simulado: devolve as respostas de cada salto, em ordem."""
+
+    def __init__(self, *respostas):
+        self.respostas, self.pedidos = list(respostas), []
+
+    async def get(self, url, max_redirects=None):
+        assert max_redirects == 0
+        self.pedidos.append(url)
+        return self.respostas.pop(0)
+
+
+def test_token_no_fim_da_cadeia_de_redirecionamentos():
+    """SSO → Moodle → launch.php → moodlemobile://: o Playwright só chama a rota no primeiro
+    endereço, então a rota segue os saltos ela mesma e o Chrome nunca vê o moodlemobile://."""
+    achado: dict[str, str] = {}
+    link = link_do_app(BASE, "pp")
+    requisicao = Requisicao(Resposta({"location": link}, status=303))
+    rota = Rota(Resposta({"location": "/20262/admin/tool/mobile/launch.php?passport=pp"}, status=303, url=BASE + "/auth/callback"))
+    rodar(navegador._interceptar(achado, requisicao)(rota))
+    assert achado["link"] == link
+    assert requisicao.pedidos == ["https://virtual.ufmg.br/20262/admin/tool/mobile/launch.php?passport=pp"]
+    assert "Login concluído" in rota.cumprida["body"]
+
+
+def test_cadeia_sem_token_leva_a_janela_ao_ultimo_endereco():
+    achado: dict[str, str] = {}
+    requisicao = Requisicao(Resposta({"content-type": "text/html"}, corpo="<h1>Painel</h1>", url=BASE + "/my/"))
+    rota = Rota(Resposta({"location": "/20262/my/"}, status=302, url=BASE + "/login/index.php"))
+    rodar(navegador._interceptar(achado, requisicao)(rota))
+    assert achado == {}
+    assert rota.cumprida == {"status": 302, "headers": {"location": BASE + "/my/"}}
+
+
+def test_recursos_que_nao_sao_paginas_seguem_sem_busca():
+    rota = Rota(Resposta({}), tipo="image")
+    rodar(navegador._interceptar({}, Requisicao())(rota))
+    assert rota.seguiu and rota.cumprida is None
+
+
+def test_redirecionamento_para_outro_esquema_nao_e_seguido():
+    requisicao = Requisicao()
+    rota = Rota(Resposta({"location": "intent://algo"}, status=302))
+    rodar(navegador._interceptar({}, requisicao)(rota))
+    assert requisicao.pedidos == [] and rota.cumprida["response"].status == 302
+
+
+def test_cadeia_longa_para_no_limite():
+    saltos = [Resposta({"location": f"/p{i}"}, status=302, url=f"{BASE}/p{i - 1}") for i in range(1, 30)]
+    requisicao = Requisicao(*saltos)
+    rodar(navegador._interceptar({}, requisicao)(Rota(Resposta({"location": "/p0"}, status=302))))
+    assert len(requisicao.pedidos) == navegador.MAX_SALTOS
