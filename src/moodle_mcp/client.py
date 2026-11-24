@@ -7,13 +7,16 @@ Garantias deste módulo:
 - só chama funções da lista FUNCOES_PERMITIDAS, todas de leitura (regra 1);
 - o token vai no corpo do POST, nunca na URL, e não aparece em mensagens de erro;
 - token só trafega por HTTPS (HTTP apenas para um Moodle local, em localhost);
-- downloads só do host do próprio Moodle, inclusive nos redirecionamentos.
+- downloads só do host do próprio Moodle, inclusive nos redirecionamentos;
+- chamadas e downloads passam pelo limite de chamadas (ADR-0005), antes da rede.
 """
 
 from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
+
+from .limite import Limitador
 
 TIMEOUT = httpx.Timeout(30.0)
 HOSTS_LOCAIS = {"localhost", "127.0.0.1", "::1"}
@@ -76,7 +79,13 @@ def _url_segura(url: str) -> bool:
 
 
 class MoodleClient:
-    def __init__(self, base_url: str, token: str, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(
+        self,
+        base_url: str,
+        token: str,
+        transport: httpx.AsyncBaseTransport | None = None,
+        limitador: Limitador | None = None,
+    ):
         if not token:
             raise ValueError("token vazio")
         self.base_url = base_url.rstrip("/")
@@ -85,6 +94,7 @@ class MoodleClient:
         self._token = token
         self._http = httpx.AsyncClient(timeout=TIMEOUT, transport=transport)
         self._site_info: dict[str, Any] | None = None
+        self.limitador = limitador or Limitador()
 
     def __repr__(self) -> str:  # nunca expor o token
         return f"MoodleClient({self.base_url!r})"
@@ -92,6 +102,7 @@ class MoodleClient:
     async def call(self, wsfunction: str, **params: Any) -> Any:
         if wsfunction not in FUNCOES_PERMITIDAS:
             raise FuncaoNaoPermitida(f"{wsfunction} não está na lista de funções de leitura")
+        self.limitador.registrar()
         resp = await self._http.post(
             f"{self.base_url}/webservice/rest/server.php",
             params={"moodlewsrestformat": "json", "wsfunction": wsfunction},
@@ -123,6 +134,7 @@ class MoodleClient:
                 partes = urlsplit(url)
                 if partes.scheme != base.scheme or partes.netloc != base.netloc or partes.username or partes.password:
                     raise ValueError("o arquivo está fora do host do Moodle")
+                self.limitador.registrar()
                 async with self._http.stream("GET", url, params={"token": self._token}, follow_redirects=False) as resp:
                     if resp.is_redirect:
                         url = str(resp.url.join(resp.headers.get("location", "")))
