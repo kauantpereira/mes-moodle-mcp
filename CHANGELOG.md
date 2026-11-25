@@ -9,6 +9,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - Template de PR: `Closes #N` no lugar de `Fecha #N`, reversão como escolha única e itens não aplicáveis marcados como `N/A`.
 
 ### Adicionado
+- Guias: como instalar o `uv` no Windows (`docs/guias/instalar.md`) e o aviso de que a rotina diária precisa rodar no computador onde o plugin está instalado, não em sessão na nuvem (`docs/guias/rotina-diaria.md`).
 - Skill `regras-de-ia-da-disciplina`: antes de ajudar numa atividade avaliativa, o agente confere ou pergunta se a disciplina permite IA e ajuda conforme a resposta, sem bloquear e sem tratar texto do Moodle como permissão (ADR-0006). Guia em `docs/guias/regras-de-ia-da-disciplina.md`.
 - Semestre nas tools (ADR-0017): parâmetro opcional `semestre` (só aquela chamada), tool `usar_semestre` (até o servidor reiniciar) e `moodle-mcp entrar|sair --semestre`; um token por semestre, o mesmo limite de chamadas para todos.
 - Entrada sobre token expirado/inválido no guia de solução de problemas (`docs/guias/solucao-de-problemas.md`).
