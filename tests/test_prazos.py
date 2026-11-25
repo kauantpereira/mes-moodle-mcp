@@ -253,3 +253,24 @@ def test_consulta_especifica_sem_submissao_e_fuso_invalido(monkeypatch):
     assert resultado["dados"][0]["status_envio"] == "sem_submissao"
     with pytest.raises(ToolError, match="Fuso horário inválido"):
         executar(server.prazos_da_semana(fuso_horario="Planeta/Errado"))
+
+
+def test_tarefas_trazem_ids_para_detalhes_da_tarefa(monkeypatch):
+    instalar(monkeypatch, dados(atividade(2, "Rascunho", AGORA + 200), atividade(3, "Nova", AGORA + 300)), {2: envio("draft")})
+    semana = executar(server.prazos_da_semana())
+    assert [(x["id"], x["courseid"]) for x in semana["dados"]] == [(2, 1), (3, 1)]
+
+    especifica = executar(server.prazos_da_semana(nome_tarefa="nova"))
+    assert especifica["modo"] == "consulta_especifica"
+    assert (especifica["dados"][0]["id"], especifica["dados"][0]["courseid"]) == (3, 1)
+
+
+def test_desambiguacao_traz_ids_e_omite_disciplina_sem_id(monkeypatch):
+    instalar(monkeypatch, {"courses": [
+        {"id": 7, "fullname": "A", "assignments": [atividade(1, "EP 2", AGORA + 1)]},
+        {"fullname": "B", "assignments": [atividade(2, "EP 2", AGORA + 2)]},
+    ]})
+    resultado = executar(server.prazos_da_semana(nome_tarefa="ep 2"))
+    assert resultado["modo"] == "desambiguar"
+    assert resultado["dados"][0]["id"] == 1 and resultado["dados"][0]["courseid"] == 7
+    assert resultado["dados"][1]["id"] == 2 and "courseid" not in resultado["dados"][1]
