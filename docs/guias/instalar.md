@@ -6,6 +6,16 @@ O plugin funciona onde o agente consegue **iniciar um servidor MCP local** na su
 
 > **Repositório privado.** Enquanto ele não for público, só quem tem acesso ao repositório consegue instalar, e o `git` da sua máquina precisa estar autenticado no GitHub (por exemplo, com `gh auth login`). Cada guia mostra como isso afeta o comando.
 
+## Instalar o `uv` no Windows
+
+O Claude Desktop do Windows só enxerga o `uv` instalado no Windows: um `uv` que esteja no WSL não vale. Sem ele, o servidor não sobe e o app mostra `Command 'uv' not found`. No PowerShell:
+
+```powershell
+winget install --id=astral-sh.uv -e
+```
+
+Depois, feche o app por completo, inclusive o ícone da bandeja, e abra de novo: ele só lê o `PATH` ao iniciar. O `uv` baixa o Python necessário sozinho, então a primeira execução demora um pouco. Para conferir, `uv --version` deve funcionar em um terminal novo.
+
 ## Plugin completo (skills e tools)
 
 Instala as três skills (`organizar-semana`, `novidades-da-faculdade` e `regras-de-ia-da-disciplina`) e o servidor MCP com as tools.

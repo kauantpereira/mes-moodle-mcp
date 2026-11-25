@@ -29,4 +29,6 @@ O plugin **não agenda sozinho**: o agendamento é do seu agente. A opção `hor
 - **Claude Code:** crie uma rotina agendada no horário escolhido, com a instrução "execute a skill novidades-da-faculdade em modo rotina".
 - **Codex e Gemini CLI:** ainda não há um passo validado. Rode a skill por conta própria ("novidades da faculdade, em modo rotina") ou use o agendador do seu sistema com o modo não interativo do agente; os guias de instalação trarão o que for confirmado.
 
+**A rotina precisa rodar no computador onde o plugin está instalado.** O servidor do Moodle é local e o login fica guardado nele ([ADR-0007](../dev/adr/0007-agentes-locais-num-monorepo.md)). Uma rotina agendada em sessão na nuvem não consegue iniciar o servidor nem entrar no seu Moodle: nenhuma tool carrega e o agente avisa que não conseguiu consultar, sem ter conferido nada. O mesmo vale para as mudanças de prazo, que são comparadas com uma lista guardada no seu computador. Agende no Claude Code ou no app instalados na sua máquina, que precisa estar ligada no horário.
+
 Evite horários entre 01h30 e 06h00 na UFMG: é a janela de backup do Moodle, e as consultas ficam bloqueadas ([ADR-0005](../dev/adr/0005-contador-e-limite-de-chamadas.md)).
