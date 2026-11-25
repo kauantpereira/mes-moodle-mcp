@@ -48,3 +48,9 @@ def sem_navegador_nem_rede_real(monkeypatch):
     monkeypatch.setattr(navegador, "_instalar_chromium", proibido)
     monkeypatch.setattr(nucleo, "_transporte", httpx.MockTransport(proibido))
     monkeypatch.setattr(login, "transporte", httpx.MockTransport(proibido))
+
+
+@pytest.fixture(autouse=True)
+def sem_estado_local_real(monkeypatch, tmp_path):
+    """Nenhum teste lê nem escreve no diretório de dados do usuário (estado do cronograma)."""
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "dados"))

@@ -10,7 +10,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from . import login, nao_confiavel, nucleo
+from . import cronograma, login, nao_confiavel, nucleo
 from .nao_confiavel import item, resposta
 
 LEITURA = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_world_hint=True)
@@ -683,6 +683,57 @@ async def avisos_recentes(
     if nao_verificadas:
         extras["nao_verificadas"] = nao_verificadas
     return resposta(dados_saida, disciplinas_consultadas=len(avisos_dos_cursos) - len(nao_verificadas), **extras)
+
+
+_LIMITE_MUDANCAS = 20
+
+
+@mcp.tool(annotations=LEITURA)
+async def mudancas_de_cronograma(
+    registrar: Annotated[
+        bool,
+        Field(description="Guarda esta leitura como a nova referência. Só a rotina diária deve usar; consultas avulsas não, para não esconder mudanças dela."),
+    ] = False,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
+) -> dict[str, Any]:
+    """Mostra os prazos de tarefas que mudaram desde a última leitura guardada: adiados, adiantados, novos ou removidos.
+
+    A primeira leitura só cria a referência e não mostra mudanças. Compara apenas o prazo oficial das tarefas do Moodle.
+    """
+    fuso = ZoneInfo(_FUSO_PADRAO)
+    agora = int(datetime.now(UTC).timestamp())
+    corte = agora - cronograma.DIAS_GUARDADOS * 86_400
+    userid = await _userid_do_aluno(semestre)
+    dados = await nucleo.chamar("mod_assign_get_assignments", semestre=semestre)
+    if not isinstance(dados, dict) or not isinstance(dados.get("courses"), list):
+        raise ToolError("O Moodle retornou uma lista de tarefas inválida.")
+
+    tarefas = {a["id"]: (curso, a) for curso, a in _tarefas_dos_cursos(dados)}
+    prazos = {id_: a["duedate"] for id_, (_, a) in tarefas.items() if isinstance(a.get("duedate"), int) and a["duedate"] >= corte}
+
+    url = nucleo.url_do_moodle(semestre)
+    anterior = cronograma.ler(url, userid)
+    mudancas = [] if anterior is None else cronograma.comparar({k: v for k, v in anterior[1].items() if v >= corte}, prazos)
+    registrada = (registrar or anterior is None) and cronograma.salvar(url, userid, agora, prazos)
+
+    mudancas.sort(key=lambda m: m[3] or m[2] or 0)
+    saida = []
+    for id_, tipo, antes, depois in mudancas[:_LIMITE_MUDANCAS]:
+        curso, atividade = tarefas.get(id_, ({}, {}))  # tarefa removida não tem nome: só se guardam ids e datas
+        metadados = {"id": id_, "mudanca": tipo}
+        if antes:
+            metadados["antes"] = _data(antes, fuso)
+        if depois:
+            metadados["agora"] = _data(depois, fuso)
+        saida.append(item(metadados, limite=_LIMITE_TEXTO, atividade=atividade.get("name"), disciplina=curso.get("fullname")))
+    extras: dict[str, Any] = {"aviso_prazos": _AVISO_PRAZOS, "registrada": registrada}
+    if anterior is None:
+        extras["primeira_leitura"] = True
+    else:
+        extras["referencia"] = _data(anterior[0], fuso)
+    if len(mudancas) > _LIMITE_MUDANCAS:
+        extras["omitidas"] = len(mudancas) - _LIMITE_MUDANCAS
+    return resposta(saida, **extras)
 
 
 @mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))
