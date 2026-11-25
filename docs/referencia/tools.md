@@ -126,6 +126,10 @@ Com `nome_tarefa`, consulta o estado mesmo fora da janela e mantém tarefas envi
 
 A resposta contém `aviso` para os textos externos, `aviso_prazos` para a limitação dos prazos externos e `dados`. Textos de nomes e arquivos ficam em `nao_confiavel`; status e timestamps são metadados.
 
+Cada tarefa (na listagem da semana, na consulta específica e na desambiguação) traz `id` (da tarefa) e `courseid` (da disciplina), para o agente chamar [`detalhes_da_tarefa`](#detalhes_da_tarefa) e ler o enunciado com o aviso de atividade avaliativa. Um id ausente ou inválido no Moodle fica de fora em vez de vir nulo.
+
+**Tamanho típico medido:** ~935 tokens com 8 tarefas (o máximo), cada uma com nome e disciplina longos e um arquivo de rascunho; os ids acrescentam ~6 tokens por tarefa (antes, ~885). Mesma medição de `detalhes_da_tarefa`: JSON compacto em bytes UTF-8 dividido por 4, não o tokenizer do modelo.
+
 ## `novidades_desde`
 
 Lista o que mudou nas disciplinas do aluno desde uma data, agrupado por disciplina: atividades e materiais novos ou alterados (`configuracao`) e arquivos novos (`arquivos`). Mudanças em notas, comentários e avaliações ficam de fora. A tool não guarda a data da última consulta: quem chama passa `desde`.
