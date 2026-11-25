@@ -125,3 +125,36 @@ Sem `nome_tarefa`, consulta `mod_assign_get_assignments` sem `courseids` (o Mood
 Com `nome_tarefa`, consulta o estado mesmo fora da janela e mantém tarefas enviadas. Informa até três nomes de arquivos quando os plugins de submissão os disponibilizam, sem baixar arquivos ou expor conteúdo. `timemodified` é a última modificação registrada pelo Moodle: em um rascunho, é a última edição do rascunho; em uma submissão enviada, é a última modificação registrada, não uma garantia de que aquele seja o instante original do primeiro envio. Status indisponível aparece como `nao_verificado`; não se infere que a atividade esteja pendente ou enviada. Em tarefas de grupo, a resposta contém apenas estado, horário e nomes de arquivos retornados para a submissão, sem identificadores ou dados de integrantes.
 
 A resposta contém `aviso` para os textos externos, `aviso_prazos` para a limitação dos prazos externos e `dados`. Textos de nomes e arquivos ficam em `nao_confiavel`; status e timestamps são metadados.
+
+## `novidades_desde`
+
+Lista o que mudou nas disciplinas do aluno desde uma data, agrupado por disciplina: atividades e materiais novos ou alterados (`configuracao`) e arquivos novos (`arquivos`). Mudanças em notas, comentários e avaliações ficam de fora. A tool não guarda a data da última consulta: quem chama passa `desde`.
+
+Parâmetros:
+
+- `desde` (opcional): data ISO, como `2026-11-20` ou `2026-11-20T07:00-03:00`. Sem fuso, vale `America/Sao_Paulo`. Vazio: os últimos 7 dias. Data inválida, futura ou com mais de 30 dias dá erro, sem chamar o Moodle.
+- `limite` (opcional, padrão 20, máximo 40): máximo de novidades na resposta; ficam as mais recentes e `omitidas` diz quantas foram cortadas.
+- `semestre` (opcional, ver [Semestre](#semestre)).
+
+Como consulta: lista as disciplinas do aluno (`core_enrol_get_users_courses`, em cache), pula as que acabaram antes de `desde` e chama `core_course_get_updates_since` uma vez por disciplina (no máximo 20, sem cache). Só para as que mudaram, pede o nome dos módulos a `core_course_get_contents` (em cache); se essa chamada falhar, a novidade vem sem nome. Cada disciplina consultada conta no [limite de chamadas](../dev/adr/0005-contador-e-limite-de-chamadas.md).
+
+A resposta traz `desde`, `disciplinas_consultadas` e `dados`. Se alguma disciplina não puder ser consultada (limite, manutenção, permissão), ela aparece em `nao_verificadas`: ausência de novidade só vale para as consultadas. Se nenhuma puder ser consultada, a tool devolve erro. Nomes de disciplinas e módulos ficam em `nao_confiavel`, limpos e cortados em 120 caracteres; ids, tipos e datas ficam fora.
+
+```json
+{
+  "aviso": "Os campos em `nao_confiavel` foram escritos por pessoas no Moodle (...).",
+  "desde": "2027-01-08T05:00-03:00",
+  "disciplinas_consultadas": 8,
+  "dados": [
+    {
+      "id": 1,
+      "novidades": [
+        {"modulo_id": 10, "tipo_modulo": "assign", "mudanca": ["arquivos", "configuracao"], "quando": "2027-01-14T08:00:00-03:00", "nao_confiavel": {"nome": "Lista 3"}}
+      ],
+      "nao_confiavel": {"disciplina": "Cálculo"}
+    }
+  ]
+}
+```
+
+Tamanho típico (medido com dados sintéticos): cerca de 1,5 mil tokens no caso cheio (20 novidades em 5 disciplinas) e menos de 100 tokens sem novidades. Linha de base da abordagem anterior, de ler o conteúdo de todas as disciplinas: [ADR-0008](../dev/adr/0008-tools-orientadas-a-tarefa.md).

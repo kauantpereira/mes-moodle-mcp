@@ -416,15 +416,8 @@ async def quem_sou_eu(semestre: Annotated[str | None, Field(description=SEMESTRE
     )
 
 
-@mcp.tool(annotations=LEITURA)
-async def notas_da_disciplina(
-    courseid: int, semestre: Annotated[str | None, Field(description=SEMESTRE)] = None
-) -> dict[str, Any]:
-    """Consulta as notas e o feedback visíveis ao aluno em uma disciplina (ID do curso no Moodle)."""
-    if isinstance(courseid, bool) or not isinstance(courseid, int) or courseid <= 0:
-        raise ToolError("Informe um identificador válido de disciplina do Moodle.")
-
-    # Não usar userid=0: em Moodle, esse padrão pode representar todos os alunos.
+async def _userid_do_aluno(semestre: str | None) -> int:
+    """Id do aluno autenticado. Nunca usa userid=0: em Moodle, esse padrão pode representar todos os alunos."""
     try:
         userid = await (await nucleo.cliente_com_login(semestre)).userid()  # sem token, abre o login
     except ToolError:
@@ -433,6 +426,18 @@ async def notas_da_disciplina(
         raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.") from None
     if isinstance(userid, bool) or not isinstance(userid, int) or userid <= 0:
         raise ToolError("Não foi possível confirmar o aluno autenticado no Moodle.")
+    return userid
+
+
+@mcp.tool(annotations=LEITURA)
+async def notas_da_disciplina(
+    courseid: int, semestre: Annotated[str | None, Field(description=SEMESTRE)] = None
+) -> dict[str, Any]:
+    """Consulta as notas e o feedback visíveis ao aluno em uma disciplina (ID do curso no Moodle)."""
+    if isinstance(courseid, bool) or not isinstance(courseid, int) or courseid <= 0:
+        raise ToolError("Informe um identificador válido de disciplina do Moodle.")
+
+    userid = await _userid_do_aluno(semestre)
 
     dados = await nucleo.chamar(
         "gradereport_user_get_grade_items", semestre=semestre, courseid=courseid, userid=userid
@@ -458,6 +463,129 @@ async def notas_da_disciplina(
         raise ToolError("O Moodle retornou uma resposta de notas incompleta.")
 
     return nao_confiavel.resposta(notas)
+
+
+_DIAS_PADRAO_NOVIDADES = 7
+_DIAS_MAXIMO_NOVIDADES = 30
+_LIMITE_NOVIDADES = 20
+_LIMITE_NOVIDADES_MAXIMO = 40
+_LIMITE_DISCIPLINAS_NOVIDADES = 20
+# Só o que o aluno costuma querer saber: atividade ou material novo/alterado e arquivos novos.
+_FILTRO_NOVIDADES = ["configuration", "fileareas"]
+_TIPO_NOVIDADE = {"configuration": "configuracao", "fileareas": "arquivos"}
+
+
+def _inicio_das_novidades(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
+    if not desde or not desde.strip():
+        return agora - timedelta(days=_DIAS_PADRAO_NOVIDADES)
+    try:
+        inicio = datetime.fromisoformat(desde.strip())
+    except ValueError:
+        raise ToolError("Data inválida em `desde`; use o formato ISO, como 2026-11-20 ou 2026-11-20T07:00-03:00.") from None
+    if inicio.tzinfo is None:
+        inicio = inicio.replace(tzinfo=fuso)
+    if inicio > agora:
+        raise ToolError("`desde` não pode estar no futuro.")
+    if agora - inicio > timedelta(days=_DIAS_MAXIMO_NOVIDADES):
+        raise ToolError(f"`desde` pode voltar no máximo {_DIAS_MAXIMO_NOVIDADES} dias.")
+    return inicio
+
+
+async def _modulos_da_disciplina(courseid: int, semestre: str | None) -> dict[int, tuple[str, str]]:
+    """Nome e tipo de cada módulo da disciplina (cache curto do núcleo). Sem eles, as novidades só perdem o nome."""
+    try:
+        secoes = await nucleo.chamar("core_course_get_contents", semestre=semestre, courseid=courseid)
+    except ToolError:
+        return {}
+    modulos: dict[int, tuple[str, str]] = {}
+    for secao in secoes if isinstance(secoes, list) else []:
+        lista = secao.get("modules") if isinstance(secao, dict) else None
+        for modulo in lista if isinstance(lista, list) else []:
+            if isinstance(modulo, dict) and isinstance(modulo.get("id"), int):
+                modulos[modulo["id"]] = (str(modulo.get("name") or ""), str(modulo.get("modname") or ""))
+    return modulos
+
+
+def _novidades_da_disciplina(dados: Any) -> list[tuple[int, int, list[str]]]:
+    """(módulo, instante da última mudança, tipos) de cada módulo alterado na resposta do Moodle."""
+    instancias = dados.get("instances") if isinstance(dados, dict) else None
+    achadas: list[tuple[int, int, list[str]]] = []
+    for instancia in instancias if isinstance(instancias, list) else []:
+        if not isinstance(instancia, dict) or instancia.get("contextlevel") != "module" or not isinstance(instancia.get("id"), int):
+            continue
+        atualizacoes = [u for u in instancia.get("updates") or [] if isinstance(u, dict) and u.get("name") in _TIPO_NOVIDADE]
+        instantes = [u["timeupdated"] for u in atualizacoes if isinstance(u.get("timeupdated"), int) and not isinstance(u["timeupdated"], bool)]
+        if instantes:
+            tipos = sorted({_TIPO_NOVIDADE[u["name"]] for u in atualizacoes})
+            achadas.append((instancia["id"], max(instantes), tipos))
+    return achadas
+
+
+@mcp.tool(annotations=LEITURA)
+async def novidades_desde(
+    desde: Annotated[
+        str | None,
+        Field(description="Data ISO a partir da qual buscar (ex.: '2026-11-20' ou '2026-11-20T07:00-03:00'). Vazio: os últimos 7 dias; no máximo 30."),
+    ] = None,
+    limite: int = _LIMITE_NOVIDADES,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
+) -> dict[str, Any]:
+    """Lista o que mudou nas disciplinas desde uma data: atividades e materiais novos ou alterados e arquivos novos, agrupado por disciplina."""
+    fuso = ZoneInfo(_FUSO_PADRAO)
+    agora = datetime.now(UTC)
+    inicio = _inicio_das_novidades(desde, agora, fuso)
+    limite = max(1, min(limite, _LIMITE_NOVIDADES_MAXIMO))
+    desde_ts = int(inicio.timestamp())
+
+    userid = await _userid_do_aluno(semestre)
+    cursos = await nucleo.chamar("core_enrol_get_users_courses", semestre=semestre, userid=userid)
+    if not isinstance(cursos, list):
+        raise ToolError("O Moodle retornou uma lista de disciplinas inválida.")
+    # Disciplina que acabou antes da data não pode ter novidade desde ela.
+    consultadas = [
+        c
+        for c in cursos
+        if isinstance(c, dict)
+        and isinstance(c.get("id"), int)
+        and not (isinstance(c.get("enddate"), int) and 0 < c["enddate"] < desde_ts)
+    ][:_LIMITE_DISCIPLINAS_NOVIDADES]
+
+    mudancas: list[tuple[int, dict[str, Any], int, list[str], tuple[str, str]]] = []
+    nao_verificadas: list[dict[str, Any]] = []
+    erro: ToolError | None = None
+    for curso in consultadas:
+        try:
+            dados = await nucleo.chamar(
+                "core_course_get_updates_since", semestre=semestre, courseid=curso["id"], since=desde_ts, filter=_FILTRO_NOVIDADES
+            )
+        except ToolError as exc:
+            erro = exc
+            nao_verificadas.append(item({"id": curso["id"]}, limite=_LIMITE_TEXTO, disciplina=str(curso.get("fullname") or "")))
+            continue
+        achadas = _novidades_da_disciplina(dados)
+        modulos = await _modulos_da_disciplina(curso["id"], semestre) if achadas else {}
+        for modulo_id, instante, tipos in achadas:
+            mudancas.append((instante, curso, modulo_id, tipos, modulos.get(modulo_id, ("", ""))))
+    if consultadas and len(nao_verificadas) == len(consultadas) and erro is not None:
+        raise erro  # nada foi consultado (limite, manutenção, token): melhor falhar do que parecer "sem novidades"
+
+    mudancas.sort(key=lambda m: m[0], reverse=True)
+    grupos: dict[int, dict[str, Any]] = {}
+    for instante, curso, modulo_id, tipos, (nome, tipo_modulo) in mudancas[:limite]:
+        grupo = grupos.setdefault(curso["id"], item({"id": curso["id"], "novidades": []}, limite=_LIMITE_TEXTO, disciplina=str(curso.get("fullname") or "")))
+        grupo["novidades"].append(
+            item(
+                {"modulo_id": modulo_id, "tipo_modulo": tipo_modulo or None, "mudanca": tipos, "quando": _data(instante, fuso)},
+                limite=_LIMITE_TEXTO,
+                nome=nome,
+            )
+        )
+    extras: dict[str, Any] = {"desde": inicio.astimezone(fuso).isoformat(timespec="minutes"), "disciplinas_consultadas": len(consultadas) - len(nao_verificadas)}
+    if len(mudancas) > limite:
+        extras["omitidas"] = len(mudancas) - limite
+    if nao_verificadas:
+        extras["nao_verificadas"] = nao_verificadas
+    return resposta(list(grupos.values()), **extras)
 
 
 @mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))
