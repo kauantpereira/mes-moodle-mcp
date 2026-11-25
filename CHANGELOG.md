@@ -28,6 +28,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - Documentação do usuário (Diátaxis) e de desenvolvimento (ADRs, pesquisa, processo, fluxo git).
 
 ### Corrigido
+- No Windows, todas as tools falhavam com `Error executing tool`: o pacote `tzdata` não era dependência e o sistema não tem banco de fusos horários. Agora é declarado, com teste que simula a falta do banco.
 - Login pelo navegador no Claude Desktop (Linux): o servidor acha a tela da sessão do aluno quando o app não repassa `DISPLAY`; antes, a tool dizia que não havia navegador.
 - Login pelo navegador: a janela abre no Minhas Turmas (UFMG) ou no login do Moodle, o aluno entra como sempre e o token é pedido por baixo com a sessão; acaba com a página de erro e o diálogo para abrir `moodlemobile://` com outro programa (xdg-open) no fim do SSO.
 - `detalhes_da_tarefa`: os tipos de arquivo aceitos vêm da config real do Moodle (`filetypeslist`); antes vinham sempre vazios. A tool não faz mais uma chamada extra para o `userid`.

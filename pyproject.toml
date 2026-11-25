@@ -9,6 +9,7 @@ dependencies = [
     "keyring>=25.7.0",
     "mcp[cli]>=2.3.0",
     "playwright>=1.49",
+    "tzdata>=2025.1",
 ]
 
 [project.scripts]
