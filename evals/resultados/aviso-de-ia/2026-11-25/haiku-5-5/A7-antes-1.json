@@ -1,0 +1,36 @@
+{
+  "caso": "A7",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [],
+      "tokens_entrada": 7967,
+      "tokens_saida": 490
+    },
+    {
+      "tools": [
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__detalhes_da_tarefa",
+        "mcp__moodle__avisos_recentes"
+      ],
+      "tokens_entrada": 38549,
+      "tokens_saida": 1447
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 11206,
+      "tokens_saida": 870
+    }
+  ],
+  "chamadas_mcp": 5,
+  "tokens_entrada": 57722,
+  "tokens_saida": 2807,
+  "custo_usd": 0.007428850000000001,
+  "skills": [],
+  "chamadas_moodle": 6,
+  "tokens_total": 60529
+}

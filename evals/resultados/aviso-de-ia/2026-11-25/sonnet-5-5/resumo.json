@@ -1,0 +1,459 @@
+[
+  {
+    "caso": "A1",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22757,
+        "tokens_saida": 643
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 22757,
+    "tokens_saida": 643,
+    "custo_usd": 0.0401153,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 23400
+  },
+  {
+    "caso": "A2",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22851,
+        "tokens_saida": 1192
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9008,
+        "tokens_saida": 368
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 31859,
+    "tokens_saida": 1560,
+    "custo_usd": 0.0678266,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 33419
+  },
+  {
+    "caso": "A3",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22976,
+        "tokens_saida": 831
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8620,
+        "tokens_saida": 331
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 31596,
+    "tokens_saida": 1162,
+    "custo_usd": 0.058715,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 32758
+  },
+  {
+    "caso": "A4",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22547,
+        "tokens_saida": 729
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8490,
+        "tokens_saida": 378
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 31037,
+    "tokens_saida": 1107,
+    "custo_usd": 0.055902099999999996,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 32144
+  },
+  {
+    "caso": "A5",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7219,
+        "tokens_saida": 711
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 7951,
+        "tokens_saida": 464
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 15170,
+    "tokens_saida": 1175,
+    "custo_usd": 0.0485203,
+    "skills": [],
+    "chamadas_moodle": 0,
+    "tokens_total": 16345
+  },
+  {
+    "caso": "A6",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana"
+        ],
+        "tokens_entrada": 14686,
+        "tokens_saida": 341
+      }
+    ],
+    "chamadas_mcp": 1,
+    "tokens_entrada": 14686,
+    "tokens_saida": 341,
+    "custo_usd": 0.0183349,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 15027
+  },
+  {
+    "caso": "A7",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22778,
+        "tokens_saida": 670
+      },
+      {
+        "tools": [
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__novidades_desde",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__novidades_desde"
+        ],
+        "tokens_entrada": 35590,
+        "tokens_saida": 930
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9999,
+        "tokens_saida": 897
+      }
+    ],
+    "chamadas_mcp": 7,
+    "tokens_entrada": 68367,
+    "tokens_saida": 2497,
+    "custo_usd": 0.12221300000000002,
+    "skills": [],
+    "chamadas_moodle": 9,
+    "tokens_total": 70864
+  },
+  {
+    "caso": "A8",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7182,
+        "tokens_saida": 237
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 7182,
+    "tokens_saida": 237,
+    "custo_usd": 0.014975299999999999,
+    "skills": [],
+    "chamadas_moodle": 0,
+    "tokens_total": 7419
+  },
+  {
+    "caso": "A1",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22865,
+        "tokens_saida": 708
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 22865,
+    "tokens_saida": 708,
+    "custo_usd": 0.0248524,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 3,
+    "tokens_total": 23573
+  },
+  {
+    "caso": "A2",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22844,
+        "tokens_saida": 1228
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9047,
+        "tokens_saida": 443
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 31891,
+    "tokens_saida": 1671,
+    "custo_usd": 0.0693547,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 3,
+    "tokens_total": 33562
+  },
+  {
+    "caso": "A3",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana"
+        ],
+        "tokens_entrada": 14859,
+        "tokens_saida": 660
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8107,
+        "tokens_saida": 330
+      }
+    ],
+    "chamadas_mcp": 1,
+    "tokens_entrada": 22966,
+    "tokens_saida": 990,
+    "custo_usd": 0.0500147,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 2,
+    "tokens_total": 23956
+  },
+  {
+    "caso": "A4",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22526,
+        "tokens_saida": 775
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8529,
+        "tokens_saida": 416
+      }
+    ],
+    "chamadas_mcp": 2,
+    "tokens_entrada": 31055,
+    "tokens_saida": 1191,
+    "custo_usd": 0.0572946,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 3,
+    "tokens_total": 32246
+  },
+  {
+    "caso": "A5",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7215,
+        "tokens_saida": 963
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8199,
+        "tokens_saida": 376
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 15414,
+    "tokens_saida": 1339,
+    "custo_usd": 0.053686899999999996,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 16753
+  },
+  {
+    "caso": "A6",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana"
+        ],
+        "tokens_entrada": 14668,
+        "tokens_saida": 317
+      }
+    ],
+    "chamadas_mcp": 1,
+    "tokens_entrada": 14668,
+    "tokens_saida": 317,
+    "custo_usd": 0.018058,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 3,
+    "tokens_total": 14985
+  },
+  {
+    "caso": "A7",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 22854,
+        "tokens_saida": 772
+      },
+      {
+        "tools": [
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__novidades_desde",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__novidades_desde"
+        ],
+        "tokens_entrada": 35960,
+        "tokens_saida": 872
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 10041,
+        "tokens_saida": 1018
+      }
+    ],
+    "chamadas_mcp": 7,
+    "tokens_entrada": 68855,
+    "tokens_saida": 2662,
+    "custo_usd": 0.12596610000000003,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 9,
+    "tokens_total": 71517
+  },
+  {
+    "caso": "A8",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-sonnet-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7185,
+        "tokens_saida": 260
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 7185,
+    "tokens_saida": 260,
+    "custo_usd": 0.015451200000000002,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 7445
+  }
+]

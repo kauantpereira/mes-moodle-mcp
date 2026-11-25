@@ -1,0 +1,25 @@
+{
+  "caso": "A5",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-sonnet-5-5",
+  "turnos": [
+    {
+      "tools": [],
+      "tokens_entrada": 7219,
+      "tokens_saida": 711
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 7951,
+      "tokens_saida": 464
+    }
+  ],
+  "chamadas_mcp": 0,
+  "tokens_entrada": 15170,
+  "tokens_saida": 1175,
+  "custo_usd": 0.0485203,
+  "skills": [],
+  "chamadas_moodle": 0,
+  "tokens_total": 16345
+}

@@ -1,0 +1,28 @@
+{
+  "caso": "A1",
+  "versao": "depois",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 26238,
+      "tokens_saida": 994
+    }
+  ],
+  "chamadas_mcp": 3,
+  "tokens_entrada": 26238,
+  "tokens_saida": 994,
+  "custo_usd": 0.00189217,
+  "skills": [
+    "moodle-mcp:novidades-da-faculdade",
+    "moodle-mcp:organizar-semana",
+    "moodle-mcp:regras-de-ia-da-disciplina"
+  ],
+  "chamadas_moodle": 5,
+  "tokens_total": 27232
+}

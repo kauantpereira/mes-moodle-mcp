@@ -1,0 +1,28 @@
+{
+  "caso": "A4",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-sonnet-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 22547,
+      "tokens_saida": 729
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 8490,
+      "tokens_saida": 378
+    }
+  ],
+  "chamadas_mcp": 2,
+  "tokens_entrada": 31037,
+  "tokens_saida": 1107,
+  "custo_usd": 0.055902099999999996,
+  "skills": [],
+  "chamadas_moodle": 3,
+  "tokens_total": 32144
+}

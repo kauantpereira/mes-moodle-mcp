@@ -1,0 +1,43 @@
+{
+  "caso": "A7",
+  "versao": "depois",
+  "execucao": 1,
+  "modelo": "claude-sonnet-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 22854,
+      "tokens_saida": 772
+    },
+    {
+      "tools": [
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__novidades_desde",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__novidades_desde"
+      ],
+      "tokens_entrada": 35960,
+      "tokens_saida": 872
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 10041,
+      "tokens_saida": 1018
+    }
+  ],
+  "chamadas_mcp": 7,
+  "tokens_entrada": 68855,
+  "tokens_saida": 2662,
+  "custo_usd": 0.12596610000000003,
+  "skills": [
+    "moodle-mcp:novidades-da-faculdade",
+    "moodle-mcp:organizar-semana",
+    "moodle-mcp:regras-de-ia-da-disciplina"
+  ],
+  "chamadas_moodle": 9,
+  "tokens_total": 71517
+}
