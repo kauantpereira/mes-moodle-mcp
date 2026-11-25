@@ -21,5 +21,6 @@ Formato: [MADR](https://adr.github.io/madr/) mínimo. Uma decisão por arquivo, 
 | [0015](0015-fluxo-de-sugestoes-com-triagem-de-conformidade.md) | Coleta de histórias com triagem de conformidade | aceita |
 | [0016](0016-login-sob-demanda-com-chaveiro-e-captura-do-token-pelo-navegador.md) | Login sob demanda, token no chaveiro e captura do token pelo navegador | aceita |
 | [0017](0017-endereco-do-moodle-pelo-perfil-e-semestre-nas-tools.md) | Endereço do Moodle vindo do perfil e semestre escolhido pelas tools | aceita |
+| [0018](0018-estado-local-so-com-ids-e-datas-para-o-cronograma.md) | Estado local só com ids e datas para o cronograma | proposta |
 
 Modelo para novas decisões: [template.md](template.md). Pesquisa que embasou as decisões: [../pesquisa.md](../pesquisa.md).
