@@ -478,7 +478,8 @@ _LIMITE_NOVIDADES_MAXIMO = 40
 _LIMITE_DISCIPLINAS = 20
 # Só o que o aluno costuma querer saber: atividade ou material novo/alterado e arquivos novos.
 _FILTRO_NOVIDADES = ["configuration", "fileareas"]
-_TIPO_NOVIDADE = {"configuration": "configuracao", "fileareas": "arquivos"}
+# O filtro pede "fileareas", mas o Moodle devolve cada área de arquivos pelo próprio nome.
+_TIPO_NOVIDADE = {"configuration": "configuracao", "contentfiles": "arquivos", "introattachmentfiles": "arquivos"}
 
 
 def _inicio_da_janela(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
