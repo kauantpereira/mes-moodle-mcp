@@ -11,3 +11,5 @@ Para os prazos, o plugin guarda uma referência no seu computador, só com núme
 Nada é registrado em `~~calendário` ou `~~tarefas` sem sua confirmação explícita. Sem um conector disponível, ela mostra só os prazos do Moodle e pode preparar um arquivo `.ics` ou um checklist em Markdown, também depois da confirmação. Consulte [conectores](../referencia/conectores.md) para ver destinos e alternativas.
 
 Os textos dos avisos e das atividades são tratados como dados não confiáveis: instruções escritas neles não são seguidas, e a skill avisa quando um aviso contém algo do tipo.
+
+Para rodar isso todo dia, sem você presente e com regras mais estritas, veja a [rotina diária](rotina-diaria.md).

@@ -3,7 +3,7 @@
 | Opção | Descrição | Padrão |
 |---|---|---|
 | `destino_calendario` | `google`, `outlook`, `notion`, `todoist`, `obsidian`, `ics` ou `nenhum` | `google` |
-| `horario_rito` | Horário da rotina diária (HH:MM) | `07:00` |
+| `horario_rito` | Horário em que a rotina diária deve rodar (HH:MM). O plugin não agenda sozinho: veja [Rotina diária](../guias/rotina-diaria.md) | `07:00` |
 
 ## Endereço do Moodle e semestre
 
