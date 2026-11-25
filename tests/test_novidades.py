@@ -44,7 +44,12 @@ def curso(id_, nome="Disciplina", **extra):
 
 
 def modulo_alterado(id_, *nomes, quando=AGORA - DIA):
-    return {"contextlevel": "module", "id": id_, "updates": [{"name": n, "timeupdated": quando} for n in nomes]}
+    # Como no Moodle: só "configuration" traz o instante; as áreas de arquivos trazem os ids.
+    return {
+        "contextlevel": "module",
+        "id": id_,
+        "updates": [{"name": n, "timeupdated": quando} if n == "configuration" else {"name": n, "itemids": [1]} for n in nomes],
+    }
 
 
 def conteudo(*modulos):
@@ -76,7 +81,7 @@ def test_agrupa_por_disciplina_e_nomeia_modulos(monkeypatch):
         monkeypatch,
         [curso(1, "Cálculo"), curso(2, "Física")],
         {
-            1: {"instances": [modulo_alterado(10, "configuration", "fileareas"), modulo_alterado(11, "fileareas", quando=AGORA - 2 * DIA)]},
+            1: {"instances": [modulo_alterado(10, "configuration", "contentfiles"), modulo_alterado(11, "configuration", "introattachmentfiles", quando=AGORA - 2 * DIA)]},
             2: {"instances": [modulo_alterado(20, "configuration", quando=AGORA - 3 * DIA)]},
         },
         {1: conteudo((10, "Lista 3", "assign"), (11, "Slides", "resource")), 2: conteudo((20, "Prova 1", "quiz"))},
