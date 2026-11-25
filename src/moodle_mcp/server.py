@@ -302,6 +302,18 @@ def _formatar_tarefa(
     return item({**item_saida}, limite=_LIMITE_TEXTO, atividade=str(atividade.get("name") or ""), disciplina=str(curso.get("fullname") or ""))
 
 
+def _tarefas_dos_cursos(dados: Any) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """(disciplina, tarefa) de cada tarefa válida da resposta de `mod_assign_get_assignments`."""
+    saida: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for curso in dados["courses"]:
+        if not isinstance(curso, dict) or not isinstance(curso.get("assignments"), list):
+            continue
+        for atividade in curso["assignments"]:
+            if isinstance(atividade, dict) and isinstance(atividade.get("id"), int):
+                saida.append((curso, atividade))
+    return saida
+
+
 @mcp.tool(
     name="prazos_da_semana",
     description=(
@@ -328,13 +340,7 @@ async def prazos_da_semana(
     if not isinstance(cursos_e_tarefas, dict) or not isinstance(cursos_e_tarefas.get("courses"), list):
         return resposta([], aviso_prazos=_AVISO_PRAZOS)
 
-    correspondencias: list[tuple[dict[str, Any], dict[str, Any]]] = []
-    for curso in cursos_e_tarefas["courses"]:
-        if not isinstance(curso, dict) or not isinstance(curso.get("assignments"), list):
-            continue
-        for atividade in curso["assignments"]:
-            if isinstance(atividade, dict) and isinstance(atividade.get("id"), int):
-                correspondencias.append((curso, atividade))
+    correspondencias = _tarefas_dos_cursos(cursos_e_tarefas)
 
     if nome_tarefa and nome_tarefa.strip():
         termo = nome_tarefa.strip().casefold()
