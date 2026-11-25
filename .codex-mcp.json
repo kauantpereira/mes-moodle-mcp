@@ -2,8 +2,9 @@
   "mcpServers": {
     "moodle": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["--from", "git+ssh://git@github.com/kauantpereira/mes-moodle-mcp", "moodle-mcp"]
+      "command": "uv",
+      "args": ["run", "moodle-mcp"],
+      "cwd": "."
     }
   }
 }
