@@ -1,0 +1,22 @@
+{
+  "caso": "A6",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana"
+      ],
+      "tokens_entrada": 16356,
+      "tokens_saida": 592
+    }
+  ],
+  "chamadas_mcp": 1,
+  "tokens_entrada": 16356,
+  "tokens_saida": 592,
+  "custo_usd": 0.00139619,
+  "skills": [],
+  "chamadas_moodle": 3,
+  "tokens_total": 16948
+}

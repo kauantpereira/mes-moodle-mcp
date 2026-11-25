@@ -1,0 +1,27 @@
+{
+  "caso": "A1",
+  "versao": "depois",
+  "execucao": 1,
+  "modelo": "claude-sonnet-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 22865,
+      "tokens_saida": 708
+    }
+  ],
+  "chamadas_mcp": 2,
+  "tokens_entrada": 22865,
+  "tokens_saida": 708,
+  "custo_usd": 0.0248524,
+  "skills": [
+    "moodle-mcp:novidades-da-faculdade",
+    "moodle-mcp:organizar-semana",
+    "moodle-mcp:regras-de-ia-da-disciplina"
+  ],
+  "chamadas_moodle": 3,
+  "tokens_total": 23573
+}

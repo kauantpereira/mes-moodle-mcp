@@ -1,0 +1,25 @@
+{
+  "caso": "A5",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [],
+      "tokens_entrada": 8037,
+      "tokens_saida": 1385
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 9466,
+      "tokens_saida": 549
+    }
+  ],
+  "chamadas_mcp": 0,
+  "tokens_entrada": 17503,
+  "tokens_saida": 1934,
+  "custo_usd": 0.00445171,
+  "skills": [],
+  "chamadas_moodle": 0,
+  "tokens_total": 19437
+}

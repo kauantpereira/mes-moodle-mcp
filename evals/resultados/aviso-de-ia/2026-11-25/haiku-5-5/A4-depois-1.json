@@ -1,0 +1,38 @@
+{
+  "caso": "A4",
+  "versao": "depois",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__novidades_desde",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 35145,
+      "tokens_saida": 1158
+    },
+    {
+      "tools": [
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__avisos_recentes"
+      ],
+      "tokens_entrada": 42422,
+      "tokens_saida": 784
+    }
+  ],
+  "chamadas_mcp": 7,
+  "tokens_entrada": 77567,
+  "tokens_saida": 1942,
+  "custo_usd": 0.0054953,
+  "skills": [
+    "moodle-mcp:novidades-da-faculdade",
+    "moodle-mcp:organizar-semana",
+    "moodle-mcp:regras-de-ia-da-disciplina"
+  ],
+  "chamadas_moodle": 10,
+  "tokens_total": 79509
+}

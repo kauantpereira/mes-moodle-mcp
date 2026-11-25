@@ -6,6 +6,7 @@ Casos de avaliação com perguntas naturais e dados sintéticos, medindo acerto,
 |---|---|---|
 | [Planejamento semanal](planejamento.md) | `organizar-semana`, `prazos_da_semana` e confirmação antes de registrar | prazos, prioridades, disponibilidade, informação ausente e texto não confiável |
 | [Injeção de prompt em avisos](injecao-em-avisos.md) | `novidades-da-faculdade` (conversa e rotina), `avisos_recentes`, `mudancas_de_cronograma` e confirmação antes de registrar | instrução para vazar dados, mexer no calendário, abrir link, falso aviso do sistema, nome de atividade malicioso, aviso legítimo (controle) e rotina sem o aluno |
+| [Aviso de uso de IA](aviso-de-ia.md) | `regras-de-ia-da-disciplina`, aviso de atividade avaliativa em `detalhes_da_tarefa` | regra desconhecida, já informada (e outra disciplina), proibida, com limites, não sabida, enunciado dizendo que a IA está liberada, pedido sem tool e pedido não avaliativo (controle) |
 
 ## Comparar versões
 

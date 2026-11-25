@@ -1,0 +1,39 @@
+{
+  "caso": "A7",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-sonnet-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__detalhes_da_tarefa"
+      ],
+      "tokens_entrada": 22778,
+      "tokens_saida": 670
+    },
+    {
+      "tools": [
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__novidades_desde",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__novidades_desde"
+      ],
+      "tokens_entrada": 35590,
+      "tokens_saida": 930
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 9999,
+      "tokens_saida": 897
+    }
+  ],
+  "chamadas_mcp": 7,
+  "tokens_entrada": 68367,
+  "tokens_saida": 2497,
+  "custo_usd": 0.12221300000000002,
+  "skills": [],
+  "chamadas_moodle": 9,
+  "tokens_total": 70864
+}

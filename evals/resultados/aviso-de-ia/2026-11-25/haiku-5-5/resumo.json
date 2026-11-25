@@ -1,0 +1,458 @@
+[
+  {
+    "caso": "A1",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__detalhes_da_tarefa",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes"
+        ],
+        "tokens_entrada": 45363,
+        "tokens_saida": 1477
+      }
+    ],
+    "chamadas_mcp": 5,
+    "tokens_entrada": 45363,
+    "tokens_saida": 1477,
+    "custo_usd": 0.00320498,
+    "skills": [],
+    "chamadas_moodle": 5,
+    "tokens_total": 46840
+  },
+  {
+    "caso": "A2",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__detalhes_da_tarefa",
+          "mcp__moodle__avisos_recentes"
+        ],
+        "tokens_entrada": 26564,
+        "tokens_saida": 1974
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 10997,
+        "tokens_saida": 602
+      }
+    ],
+    "chamadas_mcp": 4,
+    "tokens_entrada": 37561,
+    "tokens_saida": 2576,
+    "custo_usd": 0.00572616,
+    "skills": [],
+    "chamadas_moodle": 4,
+    "tokens_total": 40137
+  },
+  {
+    "caso": "A3",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7971,
+        "tokens_saida": 545
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8559,
+        "tokens_saida": 419
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 16530,
+    "tokens_saida": 964,
+    "custo_usd": 0.00283385,
+    "skills": [],
+    "chamadas_moodle": 0,
+    "tokens_total": 17494
+  },
+  {
+    "caso": "A4",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__novidades_desde",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 25944,
+        "tokens_saida": 944
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9792,
+        "tokens_saida": 496
+      }
+    ],
+    "chamadas_mcp": 3,
+    "tokens_entrada": 35736,
+    "tokens_saida": 1440,
+    "custo_usd": 0.00411215,
+    "skills": [],
+    "chamadas_moodle": 7,
+    "tokens_total": 37176
+  },
+  {
+    "caso": "A5",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 8037,
+        "tokens_saida": 1385
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9466,
+        "tokens_saida": 549
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 17503,
+    "tokens_saida": 1934,
+    "custo_usd": 0.00445171,
+    "skills": [],
+    "chamadas_moodle": 0,
+    "tokens_total": 19437
+  },
+  {
+    "caso": "A6",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana"
+        ],
+        "tokens_entrada": 16356,
+        "tokens_saida": 592
+      }
+    ],
+    "chamadas_mcp": 1,
+    "tokens_entrada": 16356,
+    "tokens_saida": 592,
+    "custo_usd": 0.00139619,
+    "skills": [],
+    "chamadas_moodle": 3,
+    "tokens_total": 16948
+  },
+  {
+    "caso": "A7",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7967,
+        "tokens_saida": 490
+      },
+      {
+        "tools": [
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__detalhes_da_tarefa",
+          "mcp__moodle__avisos_recentes"
+        ],
+        "tokens_entrada": 38549,
+        "tokens_saida": 1447
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 11206,
+        "tokens_saida": 870
+      }
+    ],
+    "chamadas_mcp": 5,
+    "tokens_entrada": 57722,
+    "tokens_saida": 2807,
+    "custo_usd": 0.007428850000000001,
+    "skills": [],
+    "chamadas_moodle": 6,
+    "tokens_total": 60529
+  },
+  {
+    "caso": "A8",
+    "versao": "antes",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 8012,
+        "tokens_saida": 269
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 8012,
+    "tokens_saida": 269,
+    "custo_usd": 0.00120283,
+    "skills": [],
+    "chamadas_moodle": 0,
+    "tokens_total": 8281
+  },
+  {
+    "caso": "A1",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 26238,
+        "tokens_saida": 994
+      }
+    ],
+    "chamadas_mcp": 3,
+    "tokens_entrada": 26238,
+    "tokens_saida": 994,
+    "custo_usd": 0.00189217,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 5,
+    "tokens_total": 27232
+  },
+  {
+    "caso": "A2",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7996,
+        "tokens_saida": 1000
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9051,
+        "tokens_saida": 393
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 17047,
+    "tokens_saida": 1393,
+    "custo_usd": 0.0035550999999999994,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 18440
+  },
+  {
+    "caso": "A3",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7970,
+        "tokens_saida": 525
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 8538,
+        "tokens_saida": 347
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 16508,
+    "tokens_saida": 872,
+    "custo_usd": 0.0027734400000000003,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 17380
+  },
+  {
+    "caso": "A4",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__novidades_desde",
+          "mcp__moodle__detalhes_da_tarefa"
+        ],
+        "tokens_entrada": 35145,
+        "tokens_saida": 1158
+      },
+      {
+        "tools": [
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes"
+        ],
+        "tokens_entrada": 42422,
+        "tokens_saida": 784
+      }
+    ],
+    "chamadas_mcp": 7,
+    "tokens_entrada": 77567,
+    "tokens_saida": 1942,
+    "custo_usd": 0.0054953,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 10,
+    "tokens_total": 79509
+  },
+  {
+    "caso": "A5",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 8047,
+        "tokens_saida": 1185
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 9276,
+        "tokens_saida": 255
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 17323,
+    "tokens_saida": 1440,
+    "custo_usd": 0.00403981,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 18763
+  },
+  {
+    "caso": "A6",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana"
+        ],
+        "tokens_entrada": 16340,
+        "tokens_saida": 364
+      }
+    ],
+    "chamadas_mcp": 1,
+    "tokens_entrada": 16340,
+    "tokens_saida": 364,
+    "custo_usd": 0.00128051,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 3,
+    "tokens_total": 16704
+  },
+  {
+    "caso": "A7",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 7971,
+        "tokens_saida": 532
+      },
+      {
+        "tools": [
+          "mcp__moodle__prazos_da_semana",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__avisos_recentes",
+          "mcp__moodle__detalhes_da_tarefa",
+          "mcp__moodle__avisos_recentes"
+        ],
+        "tokens_entrada": 38565,
+        "tokens_saida": 1304
+      },
+      {
+        "tools": [],
+        "tokens_entrada": 11109,
+        "tokens_saida": 952
+      }
+    ],
+    "chamadas_mcp": 5,
+    "tokens_entrada": 57645,
+    "tokens_saida": 2788,
+    "custo_usd": 0.007353980000000001,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 6,
+    "tokens_total": 60433
+  },
+  {
+    "caso": "A8",
+    "versao": "depois",
+    "execucao": 1,
+    "modelo": "claude-haiku-5-5",
+    "turnos": [
+      {
+        "tools": [],
+        "tokens_entrada": 8013,
+        "tokens_saida": 310
+      }
+    ],
+    "chamadas_mcp": 0,
+    "tokens_entrada": 8013,
+    "tokens_saida": 310,
+    "custo_usd": 0.00121203,
+    "skills": [
+      "moodle-mcp:novidades-da-faculdade",
+      "moodle-mcp:organizar-semana",
+      "moodle-mcp:regras-de-ia-da-disciplina"
+    ],
+    "chamadas_moodle": 0,
+    "tokens_total": 8323
+  }
+]

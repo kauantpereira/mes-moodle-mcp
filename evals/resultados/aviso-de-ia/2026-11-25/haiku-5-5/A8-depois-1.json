@@ -1,0 +1,24 @@
+{
+  "caso": "A8",
+  "versao": "depois",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [],
+      "tokens_entrada": 8013,
+      "tokens_saida": 310
+    }
+  ],
+  "chamadas_mcp": 0,
+  "tokens_entrada": 8013,
+  "tokens_saida": 310,
+  "custo_usd": 0.00121203,
+  "skills": [
+    "moodle-mcp:novidades-da-faculdade",
+    "moodle-mcp:organizar-semana",
+    "moodle-mcp:regras-de-ia-da-disciplina"
+  ],
+  "chamadas_moodle": 0,
+  "tokens_total": 8323
+}

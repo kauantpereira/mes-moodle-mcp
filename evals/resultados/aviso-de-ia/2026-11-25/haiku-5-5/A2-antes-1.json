@@ -1,0 +1,30 @@
+{
+  "caso": "A2",
+  "versao": "antes",
+  "execucao": 1,
+  "modelo": "claude-haiku-5-5",
+  "turnos": [
+    {
+      "tools": [
+        "mcp__moodle__prazos_da_semana",
+        "mcp__moodle__avisos_recentes",
+        "mcp__moodle__detalhes_da_tarefa",
+        "mcp__moodle__avisos_recentes"
+      ],
+      "tokens_entrada": 26564,
+      "tokens_saida": 1974
+    },
+    {
+      "tools": [],
+      "tokens_entrada": 10997,
+      "tokens_saida": 602
+    }
+  ],
+  "chamadas_mcp": 4,
+  "tokens_entrada": 37561,
+  "tokens_saida": 2576,
+  "custo_usd": 0.00572616,
+  "skills": [],
+  "chamadas_moodle": 4,
+  "tokens_total": 40137
+}
