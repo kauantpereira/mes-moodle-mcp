@@ -194,3 +194,33 @@ Disciplina, assunto e mensagem ficam em `nao_confiavel`, limpos e com a mensagem
 ```
 
 Tamanho típico (medido com dados sintéticos): cerca de 1,6 mil tokens com 8 avisos de mensagem longa (o pior caso do padrão), cerca de 2,3 mil com o máximo de 12 e menos de 200 sem avisos.
+
+## `mudancas_de_cronograma`
+
+Mostra os prazos de tarefas que mudaram desde a última leitura guardada: `adiado`, `adiantado`, `novo` (tarefa ou prazo que não existia) e `removido` (prazo apagado ou tarefa que não aparece mais). Compara só o prazo oficial das tarefas do Moodle (`mod_assign_get_assignments`, uma chamada, sem prorrogações individuais), como `prazos_da_semana`. Comparar com os eventos do `~~calendário` e propor a atualização é papel da skill, não da tool.
+
+É a única tool que guarda estado: um arquivo local com ids e datas, nunca nomes nem textos ([ADR-0018](../dev/adr/0018-estado-local-so-com-ids-e-datas-para-o-cronograma.md)).
+
+Parâmetros:
+
+- `registrar` (opcional, padrão `false`): guarda esta leitura como a nova referência. Só a rotina diária deve usar; uma consulta avulsa não avança a referência, para não esconder da rotina uma mudança que o aluno já viu no chat.
+- `semestre` (opcional, ver [Semestre](#semestre)).
+
+A primeira leitura (de cada aluno e Moodle) cria a referência sozinha e devolve `primeira_leitura: true`, sem mudanças. Depois, `referencia` traz a data da leitura usada na comparação e `registrada` diz se esta leitura foi guardada (também é `false` se o arquivo não puder ser escrito; as mudanças são devolvidas mesmo assim). Só se comparam prazos de até 30 dias atrás. Até 20 mudanças, em ordem de data; `omitidas` diz quantas foram cortadas.
+
+Nome da atividade e da disciplina ficam em `nao_confiavel`, limpos e cortados em 120 caracteres. Tarefa `removido` não tem nome (só se guardam ids e datas); o `id` serve para ligar ao evento do calendário.
+
+```json
+{
+  "aviso": "Os campos em `nao_confiavel` foram escritos por pessoas no Moodle (...).",
+  "aviso_prazos": "A lista considera somente o prazo oficial configurado na atividade do Moodle. (...)",
+  "registrada": false,
+  "referencia": "2027-01-14T07:00-03:00",
+  "dados": [
+    {"id": 1, "mudanca": "adiado", "antes": "2027-01-16T23:00-03:00", "agora": "2027-01-18T23:00-03:00", "nao_confiavel": {"atividade": "Lista 3", "disciplina": "Cálculo"}},
+    {"id": 3, "mudanca": "removido", "antes": "2027-01-20T23:00-03:00"}
+  ]
+}
+```
+
+Tamanho típico (medido com dados sintéticos): cerca de 160 tokens sem mudanças, cerca de 70 por mudança e cerca de 1,5 mil no máximo de 20.
