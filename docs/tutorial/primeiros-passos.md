@@ -41,7 +41,7 @@ O agente usa a tool `quem_sou_eu` e mostra o seu nome, o endereço do Moodle e a
 
 Na UFMG, cada semestre é um Moodle separado. Por padrão, vale o semestre atual. Para olhar outro, escreva:
 
-> Mostra meus prazos do semestre passado.
+> Como foram minhas notas em Cálculo no semestre passado?
 
 O agente consulta o outro semestre só nessa pergunta. Para a conversa inteira ficar em outro semestre, peça:
 
