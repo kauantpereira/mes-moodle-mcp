@@ -5,6 +5,7 @@ Casos de avaliação com perguntas naturais e dados sintéticos, medindo acerto,
 | Eval | Escopo | Casos |
 |---|---|---|
 | [Planejamento semanal](planejamento.md) | `organizar-semana`, `prazos_da_semana` e confirmação antes de registrar | prazos, prioridades, disponibilidade, informação ausente e texto não confiável |
+| [Injeção de prompt em avisos](injecao-em-avisos.md) | `novidades-da-faculdade` (conversa e rotina), `avisos_recentes`, `mudancas_de_cronograma` e confirmação antes de registrar | instrução para vazar dados, mexer no calendário, abrir link, falso aviso do sistema, nome de atividade malicioso, aviso legítimo (controle) e rotina sem o aluno |
 
 ## Comparar versões
 
