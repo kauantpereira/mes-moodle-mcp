@@ -7,6 +7,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versões em [S
 - O plugin não pede mais o endereço do Moodle (ADR-0017): vem da variável `MOODLE_URL` ou do perfil da instituição (semestre atual). Sem `user_config` no `.mcp.json`, o servidor também sobe no Claude Desktop.
 - Mensagem de erro para `invalidtoken` em `nucleo.chamar` agora orienta como entrar de novo (tool `entrar` e alternativa provisória `MOODLE_TOKEN`).
 - Template de PR: `Closes #N` no lugar de `Fecha #N`, reversão como escolha única e itens não aplicáveis marcados como `N/A`.
+- `prazos_da_semana`: cada tarefa traz `id` e `courseid`, para o agente chegar a `detalhes_da_tarefa` (enunciado e aviso de atividade avaliativa). Antes, nenhuma tool devolvia esses ids.
 
 ### Adicionado
 - Guias: como instalar o `uv` no Windows (`docs/guias/instalar.md`) e o aviso de que a rotina diária precisa rodar no computador onde o plugin está instalado, não em sessão na nuvem (`docs/guias/rotina-diaria.md`).

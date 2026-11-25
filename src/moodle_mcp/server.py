@@ -279,11 +279,18 @@ def _status(status: Any) -> str:
     return "nao_verificado"
 
 
+def _ids_da_tarefa(atividade: dict[str, Any], curso: dict[str, Any]) -> dict[str, int]:
+    """`id` e `courseid` para chamar `detalhes_da_tarefa` (ids ausentes ou inválidos ficam de fora)."""
+    ids = {"id": _inteiro_ou_nulo(atividade.get("id")), "courseid": _inteiro_ou_nulo(curso.get("id"))}
+    return {chave: valor for chave, valor in ids.items() if valor is not None}
+
+
 def _formatar_tarefa(
     atividade: dict[str, Any], curso: dict[str, Any], estado: str, fuso: ZoneInfo,
     prazo: int | None, status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     item_saida: dict[str, Any] = {
+        **_ids_da_tarefa(atividade, curso),
         "prazo": _data(prazo, fuso),
         "status_envio": estado,
     }
@@ -320,7 +327,8 @@ def _tarefas_dos_cursos(dados: Any) -> list[tuple[dict[str, Any], dict[str, Any]
         "Lista atividades com prazo nos próximos sete dias, excluindo as já enviadas; "
         "com nome_tarefa, consulta o estado, arquivos e horário de uma tarefa específica. "
         "Use fuso_horario IANA para formatar datas (padrão America/Sao_Paulo). "
-        "Verifica no máximo 15 status de submissão por execução."
+        "Verifica no máximo 15 status de submissão por execução. "
+        "Cada tarefa traz `id` e `courseid`: use-os em `detalhes_da_tarefa` para ler o enunciado."
     ),
 )
 async def prazos_da_semana(
@@ -346,7 +354,7 @@ async def prazos_da_semana(
         termo = nome_tarefa.strip().casefold()
         matches = [(curso, a) for curso, a in correspondencias if termo in str(a.get("name") or "").casefold()]
         if len(matches) > 1:
-            candidatos = [item({"id": a["id"]}, limite=_LIMITE_TEXTO, atividade=str(a.get("name") or ""), disciplina=str(c.get("fullname") or "")) for c, a in matches[:_LIMITE_MAXIMO]]
+            candidatos = [item(_ids_da_tarefa(a, c), limite=_LIMITE_TEXTO, atividade=str(a.get("name") or ""), disciplina=str(c.get("fullname") or "")) for c, a in matches[:_LIMITE_MAXIMO]]
             return resposta(candidatos, modo="desambiguar", aviso_prazos=_AVISO_PRAZOS)
         if not matches:
             return resposta([], modo="consulta_especifica", aviso_prazos=_AVISO_PRAZOS)
