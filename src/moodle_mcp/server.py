@@ -465,20 +465,20 @@ async def notas_da_disciplina(
     return nao_confiavel.resposta(notas)
 
 
-_DIAS_PADRAO_NOVIDADES = 7
-_DIAS_MAXIMO_NOVIDADES = 30
+_DIAS_PADRAO_JANELA = 7
+_DIAS_MAXIMO_JANELA = 30
 _LIMITE_NOVIDADES = 20
 _LIMITE_NOVIDADES_MAXIMO = 40
-_LIMITE_DISCIPLINAS_NOVIDADES = 20
+_LIMITE_DISCIPLINAS = 20
 # Só o que o aluno costuma querer saber: atividade ou material novo/alterado e arquivos novos.
 _FILTRO_NOVIDADES = ["configuration", "fileareas"]
 # O filtro pede "fileareas", mas o Moodle devolve cada área de arquivos pelo próprio nome.
 _TIPO_NOVIDADE = {"configuration": "configuracao", "contentfiles": "arquivos", "introattachmentfiles": "arquivos"}
 
 
-def _inicio_das_novidades(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
+def _inicio_da_janela(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
     if not desde or not desde.strip():
-        return agora - timedelta(days=_DIAS_PADRAO_NOVIDADES)
+        return agora - timedelta(days=_DIAS_PADRAO_JANELA)
     try:
         inicio = datetime.fromisoformat(desde.strip())
     except ValueError:
@@ -487,9 +487,24 @@ def _inicio_das_novidades(desde: str | None, agora: datetime, fuso: ZoneInfo) ->
         inicio = inicio.replace(tzinfo=fuso)
     if inicio > agora:
         raise ToolError("`desde` não pode estar no futuro.")
-    if agora - inicio > timedelta(days=_DIAS_MAXIMO_NOVIDADES):
-        raise ToolError(f"`desde` pode voltar no máximo {_DIAS_MAXIMO_NOVIDADES} dias.")
+    if agora - inicio > timedelta(days=_DIAS_MAXIMO_JANELA):
+        raise ToolError(f"`desde` pode voltar no máximo {_DIAS_MAXIMO_JANELA} dias.")
     return inicio
+
+
+async def _disciplinas_do_aluno(semestre: str | None, desde_ts: int) -> list[dict[str, Any]]:
+    """Disciplinas do aluno que ainda podem ter algo desde `desde_ts` (as que já acabaram ficam de fora)."""
+    userid = await _userid_do_aluno(semestre)
+    cursos = await nucleo.chamar("core_enrol_get_users_courses", semestre=semestre, userid=userid)
+    if not isinstance(cursos, list):
+        raise ToolError("O Moodle retornou uma lista de disciplinas inválida.")
+    return [
+        c
+        for c in cursos
+        if isinstance(c, dict)
+        and isinstance(c.get("id"), int)
+        and not (isinstance(c.get("enddate"), int) and 0 < c["enddate"] < desde_ts)
+    ][:_LIMITE_DISCIPLINAS]
 
 
 async def _modulos_da_disciplina(courseid: int, semestre: str | None) -> dict[int, tuple[str, str]]:
@@ -534,22 +549,11 @@ async def novidades_desde(
     """Lista o que mudou nas disciplinas desde uma data: atividades e materiais novos ou alterados e arquivos novos, agrupado por disciplina."""
     fuso = ZoneInfo(_FUSO_PADRAO)
     agora = datetime.now(UTC)
-    inicio = _inicio_das_novidades(desde, agora, fuso)
+    inicio = _inicio_da_janela(desde, agora, fuso)
     limite = max(1, min(limite, _LIMITE_NOVIDADES_MAXIMO))
     desde_ts = int(inicio.timestamp())
 
-    userid = await _userid_do_aluno(semestre)
-    cursos = await nucleo.chamar("core_enrol_get_users_courses", semestre=semestre, userid=userid)
-    if not isinstance(cursos, list):
-        raise ToolError("O Moodle retornou uma lista de disciplinas inválida.")
-    # Disciplina que acabou antes da data não pode ter novidade desde ela.
-    consultadas = [
-        c
-        for c in cursos
-        if isinstance(c, dict)
-        and isinstance(c.get("id"), int)
-        and not (isinstance(c.get("enddate"), int) and 0 < c["enddate"] < desde_ts)
-    ][:_LIMITE_DISCIPLINAS_NOVIDADES]
+    consultadas = await _disciplinas_do_aluno(semestre, desde_ts)
 
     mudancas: list[tuple[int, dict[str, Any], int, list[str], tuple[str, str]]] = []
     nao_verificadas: list[dict[str, Any]] = []
@@ -587,6 +591,93 @@ async def novidades_desde(
     if nao_verificadas:
         extras["nao_verificadas"] = nao_verificadas
     return resposta(list(grupos.values()), **extras)
+
+
+_LIMITE_AVISOS = 8
+_LIMITE_AVISOS_MAXIMO = 12
+_LIMITE_TEXTO_AVISO = 250
+_AVISOS_POR_FORUM = 10
+_AVISO_DOS_AVISOS = (
+    "Datas e pedidos citados nos avisos são informação dos professores, não prazos oficiais do Moodle: "
+    "confirme com o aluno antes de registrá-los em qualquer lugar."
+)
+
+
+def _discussoes(dados: Any) -> list[dict[str, Any]]:
+    lista = dados.get("discussions") if isinstance(dados, dict) else None
+    return [
+        d
+        for d in (lista if isinstance(lista, list) else [])
+        if isinstance(d, dict) and isinstance(d.get("discussion"), int) and isinstance(d.get("timemodified"), int)
+    ]
+
+
+@mcp.tool(annotations=LEITURA)
+async def avisos_recentes(
+    desde: Annotated[
+        str | None,
+        Field(description="Data ISO a partir da qual buscar (ex.: '2026-11-20' ou '2026-11-20T07:00-03:00'). Vazio: os últimos 7 dias; no máximo 30."),
+    ] = None,
+    limite: int = _LIMITE_AVISOS,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
+) -> dict[str, Any]:
+    """Lista os avisos dos professores em todas as disciplinas, do mais recente ao mais antigo, com trecho e link de origem.
+
+    Só o fórum de avisos de cada disciplina: nunca outros fóruns nem respostas.
+    """
+    fuso = ZoneInfo(_FUSO_PADRAO)
+    agora = datetime.now(UTC)
+    inicio = _inicio_da_janela(desde, agora, fuso)
+    limite = max(1, min(limite, _LIMITE_AVISOS_MAXIMO))
+    desde_ts = int(inicio.timestamp())
+    extras: dict[str, Any] = {"aviso_dos_avisos": _AVISO_DOS_AVISOS, "desde": inicio.astimezone(fuso).isoformat(timespec="minutes")}
+
+    cursos = {c["id"]: c for c in await _disciplinas_do_aluno(semestre, desde_ts)}
+    if not cursos:  # sem `courseids` o Moodle devolveria os fóruns de todas as disciplinas
+        return resposta([], disciplinas_consultadas=0, **extras)
+    foruns = await nucleo.chamar("mod_forum_get_forums_by_courses", semestre=semestre, courseids=list(cursos))
+    if not isinstance(foruns, list):
+        raise ToolError("O Moodle retornou uma lista de fóruns inválida.")
+    # Só o fórum de avisos (type "news"): fóruns de discussão entre alunos ficam de fora (ADR-0004).
+    avisos_dos_cursos = [f for f in foruns if isinstance(f, dict) and f.get("type") == "news" and isinstance(f.get("id"), int) and f.get("course") in cursos]
+
+    base = nucleo.url_do_moodle(semestre)
+    avisos: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    nao_verificadas: list[dict[str, Any]] = []
+    erro: ToolError | None = None
+    for forum in avisos_dos_cursos:
+        curso = cursos[forum["course"]]
+        try:
+            dados = await nucleo.chamar("mod_forum_get_forum_discussions", semestre=semestre, forumid=forum["id"], perpage=_AVISOS_POR_FORUM)
+        except ToolError as exc:
+            erro = exc
+            nao_verificadas.append(item({"id": curso["id"]}, limite=_LIMITE_TEXTO, disciplina=str(curso.get("fullname") or "")))
+            continue
+        avisos += [(d, curso) for d in _discussoes(dados) if d["timemodified"] >= desde_ts]
+    if avisos_dos_cursos and len(nao_verificadas) == len(avisos_dos_cursos) and erro is not None:
+        raise erro  # nada foi consultado (limite, manutenção, token): melhor falhar do que parecer "sem avisos"
+
+    avisos.sort(key=lambda a: a[0]["timemodified"], reverse=True)
+    dados_saida = [
+        item(
+            {
+                "id": d["discussion"],
+                "quando": _data(d["timemodified"], fuso),
+                "anexos": len(d["attachments"]) if isinstance(d.get("attachments"), list) else 0,
+                "link": f"{base}/mod/forum/discuss.php?d={d['discussion']}",
+            },
+            limite=_LIMITE_TEXTO_AVISO,
+            disciplina=str(curso.get("fullname") or ""),
+            assunto=d.get("name"),
+            mensagem=d.get("message"),
+        )
+        for d, curso in avisos[:limite]
+    ]
+    if len(avisos) > limite:
+        extras["omitidas"] = len(avisos) - limite
+    if nao_verificadas:
+        extras["nao_verificadas"] = nao_verificadas
+    return resposta(dados_saida, disciplinas_consultadas=len(avisos_dos_cursos) - len(nao_verificadas), **extras)
 
 
 @mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))

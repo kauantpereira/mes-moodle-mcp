@@ -71,7 +71,11 @@ def test_funcao_fora_da_lista_e_barrada_antes_da_requisicao():
 
 def test_lista_de_funcoes_so_tem_leitura():
     assert all("_get_" in f for f in FUNCOES_PERMITIDAS)
-    assert not any(f.startswith("mod_forum_") for f in FUNCOES_PERMITIDAS)
+    # Fórum: só os avisos dos professores (ADR-0004). As respostas (posts) continuam barradas.
+    assert {f for f in FUNCOES_PERMITIDAS if f.startswith("mod_forum_")} <= {
+        "mod_forum_get_forums_by_courses",
+        "mod_forum_get_forum_discussions",
+    }
 
 
 def test_site_info_fica_em_cache():

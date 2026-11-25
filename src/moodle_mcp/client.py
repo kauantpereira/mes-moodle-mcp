@@ -34,6 +34,8 @@ FUNCOES_PERMITIDAS = frozenset(
         "core_course_get_contents",
         "core_course_get_updates_since",
         "core_calendar_get_action_events_by_timesort",
+        "mod_forum_get_forums_by_courses",
+        "mod_forum_get_forum_discussions",
         "mod_assign_get_assignments",
         "mod_assign_get_submission_status",
         "gradereport_user_get_grade_items",
