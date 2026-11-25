@@ -465,19 +465,19 @@ async def notas_da_disciplina(
     return nao_confiavel.resposta(notas)
 
 
-_DIAS_PADRAO_NOVIDADES = 7
-_DIAS_MAXIMO_NOVIDADES = 30
+_DIAS_PADRAO_JANELA = 7
+_DIAS_MAXIMO_JANELA = 30
 _LIMITE_NOVIDADES = 20
 _LIMITE_NOVIDADES_MAXIMO = 40
-_LIMITE_DISCIPLINAS_NOVIDADES = 20
+_LIMITE_DISCIPLINAS = 20
 # Só o que o aluno costuma querer saber: atividade ou material novo/alterado e arquivos novos.
 _FILTRO_NOVIDADES = ["configuration", "fileareas"]
 _TIPO_NOVIDADE = {"configuration": "configuracao", "fileareas": "arquivos"}
 
 
-def _inicio_das_novidades(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
+def _inicio_da_janela(desde: str | None, agora: datetime, fuso: ZoneInfo) -> datetime:
     if not desde or not desde.strip():
-        return agora - timedelta(days=_DIAS_PADRAO_NOVIDADES)
+        return agora - timedelta(days=_DIAS_PADRAO_JANELA)
     try:
         inicio = datetime.fromisoformat(desde.strip())
     except ValueError:
@@ -486,9 +486,24 @@ def _inicio_das_novidades(desde: str | None, agora: datetime, fuso: ZoneInfo) ->
         inicio = inicio.replace(tzinfo=fuso)
     if inicio > agora:
         raise ToolError("`desde` não pode estar no futuro.")
-    if agora - inicio > timedelta(days=_DIAS_MAXIMO_NOVIDADES):
-        raise ToolError(f"`desde` pode voltar no máximo {_DIAS_MAXIMO_NOVIDADES} dias.")
+    if agora - inicio > timedelta(days=_DIAS_MAXIMO_JANELA):
+        raise ToolError(f"`desde` pode voltar no máximo {_DIAS_MAXIMO_JANELA} dias.")
     return inicio
+
+
+async def _disciplinas_do_aluno(semestre: str | None, desde_ts: int) -> list[dict[str, Any]]:
+    """Disciplinas do aluno que ainda podem ter algo desde `desde_ts` (as que já acabaram ficam de fora)."""
+    userid = await _userid_do_aluno(semestre)
+    cursos = await nucleo.chamar("core_enrol_get_users_courses", semestre=semestre, userid=userid)
+    if not isinstance(cursos, list):
+        raise ToolError("O Moodle retornou uma lista de disciplinas inválida.")
+    return [
+        c
+        for c in cursos
+        if isinstance(c, dict)
+        and isinstance(c.get("id"), int)
+        and not (isinstance(c.get("enddate"), int) and 0 < c["enddate"] < desde_ts)
+    ][:_LIMITE_DISCIPLINAS]
 
 
 async def _modulos_da_disciplina(courseid: int, semestre: str | None) -> dict[int, tuple[str, str]]:
@@ -533,22 +548,11 @@ async def novidades_desde(
     """Lista o que mudou nas disciplinas desde uma data: atividades e materiais novos ou alterados e arquivos novos, agrupado por disciplina."""
     fuso = ZoneInfo(_FUSO_PADRAO)
     agora = datetime.now(UTC)
-    inicio = _inicio_das_novidades(desde, agora, fuso)
+    inicio = _inicio_da_janela(desde, agora, fuso)
     limite = max(1, min(limite, _LIMITE_NOVIDADES_MAXIMO))
     desde_ts = int(inicio.timestamp())
 
-    userid = await _userid_do_aluno(semestre)
-    cursos = await nucleo.chamar("core_enrol_get_users_courses", semestre=semestre, userid=userid)
-    if not isinstance(cursos, list):
-        raise ToolError("O Moodle retornou uma lista de disciplinas inválida.")
-    # Disciplina que acabou antes da data não pode ter novidade desde ela.
-    consultadas = [
-        c
-        for c in cursos
-        if isinstance(c, dict)
-        and isinstance(c.get("id"), int)
-        and not (isinstance(c.get("enddate"), int) and 0 < c["enddate"] < desde_ts)
-    ][:_LIMITE_DISCIPLINAS_NOVIDADES]
+    consultadas = await _disciplinas_do_aluno(semestre, desde_ts)
 
     mudancas: list[tuple[int, dict[str, Any], int, list[str], tuple[str, str]]] = []
     nao_verificadas: list[dict[str, Any]] = []
