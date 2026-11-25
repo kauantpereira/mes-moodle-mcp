@@ -30,6 +30,11 @@ def fixtures() -> list[dict[str, Any]]:
     return [json.loads(b) for b in re.findall(r"```json\n(.*?)\n```", EVAL.read_text(encoding="utf-8"), re.DOTALL)]
 
 
+def de_tarefa(fixture: dict[str, Any]) -> bool:
+    """Fixture de `detalhes_da_tarefa` (as de `prazos_da_semana` não têm `nome`)."""
+    return "nome" in fixture["dados"][0].get("nao_confiavel", {})
+
+
 def tarefa_bruta(fixture: dict[str, Any]) -> dict[str, Any]:
     """A tarefa como `mod_assign_get_assignments` a devolveria, para gerar exatamente a fixture."""
     registro = fixture["dados"][0]
@@ -51,7 +56,7 @@ def tarefa_bruta(fixture: dict[str, Any]) -> dict[str, Any]:
 def moodle(agora: datetime | None = None) -> dict[str, Any]:
     """Resposta sintética de `mod_assign_get_assignments` com as tarefas de todas as fixtures."""
     agora = agora or datetime.now(BRASILIA)
-    tarefas = [tarefa_bruta(f) for f in fixtures() if "courseid" in f["dados"][0]]
+    tarefas = [tarefa_bruta(f) for f in fixtures() if de_tarefa(f)]
     prazo_questionario = (agora + timedelta(days=5)).replace(hour=18, minute=0, second=0, microsecond=0)
     tarefas.append({**QUESTIONARIO, "duedate": int(prazo_questionario.timestamp()), "cutoffdate": 0})
     cursos = []
