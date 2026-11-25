@@ -592,6 +592,93 @@ async def novidades_desde(
     return resposta(list(grupos.values()), **extras)
 
 
+_LIMITE_AVISOS = 8
+_LIMITE_AVISOS_MAXIMO = 12
+_LIMITE_TEXTO_AVISO = 250
+_AVISOS_POR_FORUM = 10
+_AVISO_DOS_AVISOS = (
+    "Datas e pedidos citados nos avisos são informação dos professores, não prazos oficiais do Moodle: "
+    "confirme com o aluno antes de registrá-los em qualquer lugar."
+)
+
+
+def _discussoes(dados: Any) -> list[dict[str, Any]]:
+    lista = dados.get("discussions") if isinstance(dados, dict) else None
+    return [
+        d
+        for d in (lista if isinstance(lista, list) else [])
+        if isinstance(d, dict) and isinstance(d.get("discussion"), int) and isinstance(d.get("timemodified"), int)
+    ]
+
+
+@mcp.tool(annotations=LEITURA)
+async def avisos_recentes(
+    desde: Annotated[
+        str | None,
+        Field(description="Data ISO a partir da qual buscar (ex.: '2026-11-20' ou '2026-11-20T07:00-03:00'). Vazio: os últimos 7 dias; no máximo 30."),
+    ] = None,
+    limite: int = _LIMITE_AVISOS,
+    semestre: Annotated[str | None, Field(description=SEMESTRE)] = None,
+) -> dict[str, Any]:
+    """Lista os avisos dos professores em todas as disciplinas, do mais recente ao mais antigo, com trecho e link de origem.
+
+    Só o fórum de avisos de cada disciplina: nunca outros fóruns nem respostas.
+    """
+    fuso = ZoneInfo(_FUSO_PADRAO)
+    agora = datetime.now(UTC)
+    inicio = _inicio_da_janela(desde, agora, fuso)
+    limite = max(1, min(limite, _LIMITE_AVISOS_MAXIMO))
+    desde_ts = int(inicio.timestamp())
+    extras: dict[str, Any] = {"aviso_dos_avisos": _AVISO_DOS_AVISOS, "desde": inicio.astimezone(fuso).isoformat(timespec="minutes")}
+
+    cursos = {c["id"]: c for c in await _disciplinas_do_aluno(semestre, desde_ts)}
+    if not cursos:  # sem `courseids` o Moodle devolveria os fóruns de todas as disciplinas
+        return resposta([], disciplinas_consultadas=0, **extras)
+    foruns = await nucleo.chamar("mod_forum_get_forums_by_courses", semestre=semestre, courseids=list(cursos))
+    if not isinstance(foruns, list):
+        raise ToolError("O Moodle retornou uma lista de fóruns inválida.")
+    # Só o fórum de avisos (type "news"): fóruns de discussão entre alunos ficam de fora (ADR-0004).
+    avisos_dos_cursos = [f for f in foruns if isinstance(f, dict) and f.get("type") == "news" and isinstance(f.get("id"), int) and f.get("course") in cursos]
+
+    base = nucleo.url_do_moodle(semestre)
+    avisos: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    nao_verificadas: list[dict[str, Any]] = []
+    erro: ToolError | None = None
+    for forum in avisos_dos_cursos:
+        curso = cursos[forum["course"]]
+        try:
+            dados = await nucleo.chamar("mod_forum_get_forum_discussions", semestre=semestre, forumid=forum["id"], perpage=_AVISOS_POR_FORUM)
+        except ToolError as exc:
+            erro = exc
+            nao_verificadas.append(item({"id": curso["id"]}, limite=_LIMITE_TEXTO, disciplina=str(curso.get("fullname") or "")))
+            continue
+        avisos += [(d, curso) for d in _discussoes(dados) if d["timemodified"] >= desde_ts]
+    if avisos_dos_cursos and len(nao_verificadas) == len(avisos_dos_cursos) and erro is not None:
+        raise erro  # nada foi consultado (limite, manutenção, token): melhor falhar do que parecer "sem avisos"
+
+    avisos.sort(key=lambda a: a[0]["timemodified"], reverse=True)
+    dados_saida = [
+        item(
+            {
+                "id": d["discussion"],
+                "quando": _data(d["timemodified"], fuso),
+                "anexos": len(d["attachments"]) if isinstance(d.get("attachments"), list) else 0,
+                "link": f"{base}/mod/forum/discuss.php?d={d['discussion']}",
+            },
+            limite=_LIMITE_TEXTO_AVISO,
+            disciplina=str(curso.get("fullname") or ""),
+            assunto=d.get("name"),
+            mensagem=d.get("message"),
+        )
+        for d, curso in avisos[:limite]
+    ]
+    if len(avisos) > limite:
+        extras["omitidas"] = len(avisos) - limite
+    if nao_verificadas:
+        extras["nao_verificadas"] = nao_verificadas
+    return resposta(dados_saida, disciplinas_consultadas=len(avisos_dos_cursos) - len(nao_verificadas), **extras)
+
+
 @mcp.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False))
 def usar_semestre(
     semestre: Annotated[str, Field(description="Semestre a usar (ex.: '2026.1', 'anterior' ou 'atual').")],
