@@ -10,7 +10,7 @@ Deixe seu assistente de IA (Claude, Codex ou Gemini CLI) acompanhar o seu Moodle
 - **Regras de IA:** lembra de conferir se a disciplina permite IA antes de ajudar numa atividade avaliativa.
 
 ## Comece em 5 minutos
-1. Instale no seu agente (no Claude Code: `/plugin marketplace add kauantpereira/mes-moodle-mcp` e `/plugin install moodle-mcp@mes-moodle-mcp`): [Claude Code](docs/guias/instalar-no-claude.md) · [Codex](docs/guias/instalar-no-codex.md) · [Gemini CLI](docs/guias/instalar-no-gemini.md)
+1. Instale no seu agente. [Onde funciona](docs/guias/instalar.md) (e onde não funciona), depois o passo a passo: [Claude Code](docs/guias/instalar-no-claude.md) · [Codex](docs/guias/instalar-no-codex.md) · [Gemini CLI](docs/guias/instalar-no-gemini.md)
 2. Siga o [tutorial de primeiros passos](docs/tutorial/primeiros-passos.md).
 
 ## Documentação
